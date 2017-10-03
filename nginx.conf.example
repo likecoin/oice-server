@@ -1,0 +1,58 @@
+server {
+    listen 80;
+    server_name  modmod.dev;
+
+    index  index.html index.htm;
+
+    client_max_body_size 100M;
+
+    location ~ /_debug_toolbar/ {
+        add_header Access-Control-Allow-Origin *;
+        proxy_set_header Host $host;
+        proxy_pass http://127.0.0.1:6543;
+    }
+
+    location ~ /api {
+        rewrite /api/(.*) /$1  break;
+        add_header Access-Control-Allow-Origin *;
+        proxy_pass http://127.0.0.1:6543;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Host $http_host;
+    }
+
+    location ~ /socket.io {
+        add_header Access-Control-Allow-Origin *;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_redirect off;
+        proxy_http_version 1.1;
+        proxy_pass http://127.0.0.1:8082;
+    }
+
+    location ~ /oice/static/(.*) {
+        alias /home/modmod/modmod/views/static/$1;
+    }
+
+    location ~ /oice {
+        rewrite /oice/(.*) /api/oice/$1 last;
+    }
+
+    location ~ /(upload|view) {
+        root /home/modmod;
+    }
+
+    location ~ /(js|styles|fonts|images) {
+        add_header Cache-Control "no-cache, no-store";
+        root /home/modmod-web/dist;
+    }
+
+    location ~ / {
+        add_header Cache-Control "no-cache, no-store";
+        root /home/modmod-web/dist;
+        try_files $uri $uri/ /index.html;
+    }
+
+}
