@@ -1,0 +1,27 @@
+{
+  "name": "modmod-socket.io",
+  "version": "0.0.0",
+  "description": "Update import / validate / export status to client",
+  "author": "Oursky",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "main": "server.js",
+  "bugs": {
+    "url": "https://github.com/nodejitsu/browsenpm.org/issues"
+  },
+  "dependencies": {
+    "body-parser": "^1.12.4",
+    "express": "^4.12.4",
+    "request": "^2.79.0",
+    "socket.io": "^1.7.2"
+  },
+  "preferGlobal": true,
+  "private": true,
+  "publishConfig": {
+    "registry": "https://your-private-hosted-npm.registry.nodejitsu.com"
+  },
+  "subdomain": "foobar",
+  "analyze": true,
+  "license": "MIT"
+}

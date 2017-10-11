@@ -1,0 +1,4338 @@
+swagger: '2.0'
+
+info:
+  version: "2.0"
+  title: oice API
+
+host: localhost:6543
+
+schemes:
+  - http
+
+consumes:
+  - application/x-www-form-urlencoded
+  - application/json
+
+produces:
+  - application/json
+
+paths:
+  /login:
+    post:
+      summary: Login by using Google Login Token
+      parameters:
+        - name: credential
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                description: Email of the user
+              googleToken:
+                type: string
+                description: The Google API token
+              isAnonymous:
+                type: boolean
+              firebaseUserId:
+                type: string
+              prevFirebaseUserId:
+                type: string
+              displayName:
+                type: string
+              photoURL:
+                type: string
+                description: The photo URL of the user from Google
+              language:
+                type: string
+                description: User preferred language
+              branchData:
+                type: object
+
+      tags:
+      - User
+      responses:
+        200:
+          description: User log in successfully
+          schema:
+            properties:
+              code:
+                type: integer
+              user:
+                $ref: '#/definitions/User'
+        default:
+          description: unexpected error
+          schema:
+            properties:
+              code:
+                type: integer
+                description: The error code
+              error:
+                type: string
+                description: The detail of the error
+  /logout:
+    delete:
+      summary: Logout
+      tags:
+      - User
+      responses:
+        200:
+          description: Default success message
+  /profile:
+    get:
+      summary: Get current user profile
+      tags:
+      - User
+      responses:
+        200:
+          description: A user object
+          schema:
+            properties:
+              code:
+                type: integer
+              user:
+                $ref: '#/definitions/User'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+    post:
+      summary: Update current user profile
+      consumes:
+      - multipart/form-data
+      parameters:
+      - name: meta
+        description: |
+          A serialize object of the user meta, for example:
+
+          {
+            "displayName": "John Chapman",
+            "description": "Johnny Appleseed",
+            "language": "zh_HK"
+          }
+        in: formData
+        required: false
+        type: string
+      - name: avatar
+        description: The image file of the avatar
+        in: formData
+        required: false
+        type: file
+      tags:
+      - User
+      responses:
+        200:
+          description: A user object
+          schema:
+            properties:
+              user:
+                $ref: '#/definitions/User'
+              message:
+                type: string
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /credits/user/{userId}:
+    get:
+      summary: Get a list of credits of user
+      parameters:
+      - $ref: '#/parameters/user_id'
+      tags:
+      - User
+      - Credit
+      responses:
+        200:
+          description: List of credits of user
+          schema:
+            properties:
+              code:
+                type: integer
+              user:
+                $ref: '#/definitions/UserCredit'
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/Story'
+              libraries:
+                type: array
+                items:
+                  $ref: '#/definitions/Oice'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /membership:
+    post:
+      summary: Upgrade membership
+      parameters:
+      - name: token
+        description: Credit card details
+        in: body
+        required: true
+        schema:
+          properties:
+            id:
+              type: integer
+              description: Token ID
+      tags:
+      - User
+      responses:
+        200:
+          description: upgrade membership
+          schema:
+            properties:
+              user:
+                $ref: '#/definitions/User'
+              message:
+                type: string
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Cancel membership
+      tags:
+      - User
+      responses:
+        200:
+          description: cancel membership
+          schema:
+            properties:
+              user:
+                $ref: '#/definitions/User'
+              message:
+                type: string
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /membership/android:
+    post:
+      summary: Upgrade membership via android subscription
+      parameters:
+      - name: receipt
+        description: android iap receipt
+        in: body
+        required: true
+        schema:
+          properties:
+            receipt:
+              type: string
+              description: android product receipt in json format
+      tags:
+      - User
+      responses:
+        200:
+          description: upgrade membership
+          schema:
+            properties:
+              user:
+                $ref: '#/definitions/User'
+              message:
+                type: string
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /membership/ios:
+    post:
+      summary: Upgrade membership via ios subscription
+      parameters:
+      - name: receipt
+        description: ios iap receipt
+        in: body
+        required: true
+        schema:
+          properties:
+            receipt:
+              type: string
+              description: ios7 style whole receipt in base64
+      tags:
+      - User
+      responses:
+        200:
+          description: upgrade membership
+          schema:
+            properties:
+              user:
+                $ref: '#/definitions/User'
+              message:
+                type: string
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /user/search/{prefix}:
+    get:
+      summary: Search user
+      parameters:
+      - $ref: '#/parameters/prefix'
+      tags:
+      - User
+      - AssetManagement
+      responses:
+        200:
+          description: List of users
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              users:
+                type: array
+                items:
+                  $ref: '#/definitions/UserMin'
+  /strip_hook:
+    post:
+      summary: Stripe webhook
+      parameters:
+      - name: event
+        in: body
+        required: true
+        schema:
+          properties:
+            id:
+              type: integer
+      tags:
+      - User
+      responses:
+        200:
+          description: Stripe webhook result
+          schema:
+            properties:
+              message:
+                type: string
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /trial_hook:
+    post:
+      summary: webhook to trigger trial expire check
+      tags:
+      - User
+      responses:
+        200:
+          description: always return 200
+          schema:
+            properties:
+              message:
+                type: string
+              code:
+                type: integer
+  /user/{userId}/profile:
+    get:
+      summary: Get profile information related to user's stories, libraries and credits
+      parameters:
+      - $ref: '#/parameters/user_id'
+      tags:
+      - User
+      responses:
+        200:
+          description: User information, stories, libraries and credited stories
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              user:
+                $ref: '#/definitions/UserCredit'
+              stats:
+                type: object
+                properties:
+                  oices:
+                    type: integer
+                    description: Number of public oices the user created
+                  assets:
+                    type: integer
+                    description: Number of available assets in public library by the users
+                  credits:
+                    type: integer
+                    description: Number of public oices that use assets from the user
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryProfile'
+              libraries:
+                type: array
+                items:
+                  $ref: '#/definitions/LibraryProfile'
+              credits:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryProfile'
+  /user/links/types:
+    get:
+      summary: List all link types
+      tags:
+      - UserLink
+      responses:
+        200:
+          description: List all link types
+          schema:
+            properties:
+              code:
+                type: integer
+              linkTypes:
+                type: array
+                items:
+                  $ref: '#/definitions/UserLinkType'
+              message:
+                type: string
+  /user/{user_id}/links:
+    get:
+      summary: List all links of an user
+      parameters:
+      - $ref: '#/parameters/user_id'
+      tags:
+      - UserLink
+      responses:
+        200:
+          description: List all links of an user
+          schema:
+            properties:
+              code:
+                type: integer
+              link:
+                $ref: '#/definitions/UserLink'
+              message:
+                type: string
+        404:
+          description: The user you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /user/links:
+    post:
+      summary: Create a new link to current user
+      parameters:
+      - name: content of the link
+        description: Define source and target languages
+        in: body
+        required: true
+        schema:
+          properties:
+            typeAlias:
+              type: string
+              description: Refer to definitions/UserLinkType/alias
+            label:
+              type: string
+              description: A label provided by user
+            link:
+              type: string
+              description: A URL provided by user
+      tags:
+      - UserLink
+      responses:
+        200:
+          description: Creation succeeded
+          schema:
+            properties:
+              code:
+                type: integer
+              link:
+                $ref: '#/definitions/UserLink'
+              message:
+                type: string
+        403:
+          description: You don\'t have permission to create item, probably because user has not logged in
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+  /user/link/{userLinkId}:
+    post:
+      summary: Update an existing link of current user
+      parameters:
+      - $ref: '#/parameters/user_link_id'
+      - name: content of the link
+        description: Define source and target languages
+        in: body
+        required: true
+        schema:
+          properties:
+            typeAlias:
+              type: string
+              description: Refer to definitions/UserLinkType/alias
+            label:
+              type: string
+              description: A label provided by user
+            link:
+              type: string
+              description: A URL provided by user
+            order:
+              type: integer
+              description: For reordering links
+      tags:
+      - UserLink
+      responses:
+        200:
+          description: Update succeeded
+          schema:
+            properties:
+              code:
+                type: integer
+              link:
+                $ref: '#/definitions/UserLink'
+              message:
+                type: string
+        403:
+          description: You don\'t have permission to update this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+    delete:
+      summary: Delete a particular link of current user
+      parameters:
+      - $ref: '#/parameters/user_link_id'
+      tags:
+      - UserLink
+      responses:
+        200:
+          description: Deletion succeeded
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        403:
+          description: You don\'t have permission to delete this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+  /story:
+    get:
+      summary: Get stories of a user
+      tags:
+      - Story
+      responses:
+        200:
+          description: Array of stories
+          schema:
+            properties:
+              code:
+                type: integer
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/Story'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+    post:
+      summary: Add a new story
+      parameters:
+      - name: meta
+        description: |
+          Meta of the story which is a serialize object, for example:
+
+          {
+            "name": "Three Little Pigs",
+            "description": "Classical story for kids",
+            "language": "zh_HK",
+          }
+        in: formData
+        required: true
+        type: string
+      - name: coverStorage
+        in: formData
+        type: file
+      - name: ogImage
+        description: The og image of the oice
+        in: formData
+        required: false
+        type: file
+      consumes:
+      - multipart/form-data
+      tags:
+      - Story
+      - AssetManagement
+      responses:
+        200:
+          description: Added story object
+          schema:
+            properties:
+              story:
+                $ref: '#/definitions/Story'
+              code:
+                type: integer
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+  /app/story:
+    get:
+      summary: Get app story list
+      parameters:
+      - name: playing_id
+        in: query
+        description: The playing story id
+        required: false
+        type: integer
+        format: int32
+      - name: lang
+        in: query
+        description: Language of the client
+        required: false
+        type: string
+      - name: before_time
+        in: query
+        description: The time in unix timestamp format that filters stories by last update time before it
+        required: false
+        type: integer
+        format: int64
+      - name: limit
+        in: query
+        description: The limit of the number stories returns
+        required: false
+        type: integer
+        format: int32
+      tags:
+      - App
+      - Story
+      responses:
+        200:
+          description: Story list
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              playingStory:
+                $ref: '#/definitions/StoryApp'
+              featuredStories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryApp'
+              localizedStories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryApp'
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryApp'
+  /app/story/{storyId}/progress:
+    get:
+      summary: Get app story progress
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - App
+      - Story
+      responses:
+        200:
+          description: Story list
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              oice:
+                $ref: "#/definitions/Oice"
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /app/story/{storyId}/episodes:
+    get:
+      summary: Get all episode of a story in app
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - App
+      - Story
+      responses:
+        200:
+          description: Episodes list
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              story:
+                $ref: '#/definitions/Story'
+              oices:
+                type: array
+                items:
+                  type: object
+                  description: An oice
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    cover:
+                      type: string
+                    uuid:
+                      type: string
+                    viewable:
+                      type: boolean
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}:
+    get:
+      summary: Get a story by ID
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Story
+      responses:
+        200:
+          description: Story object
+          schema:
+            properties:
+              code:
+                type: integer
+              story:
+                $ref: '#/definitions/Story'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Update a story by ID
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - name: meta
+        description: |
+          Meta of the story which is a serialize object, for example:
+
+          {
+            "name": "Three Little Pigs",
+            "description": "Classical story for kids",
+          }
+        in: formData
+        type: string
+      - name: coverStorage
+        in: formData
+        type: file
+      - name: titleLogo
+        in: formData
+        type: file
+      - name: heroImage
+        in: formData
+        type: file
+      consumes:
+      - multipart/form-data
+      tags:
+      - Story
+      - AssetManagement
+      responses:
+        200:
+          description: Updated story object
+          schema:
+            properties:
+              story:
+                $ref: '#/definitions/Story'
+              code:
+                type: integer
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Delete a story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Story
+      responses:
+        200:
+          description: Status
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/language/{language}:
+    get:
+      summary: Get supported languages of a story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - $ref: '#/parameters/language'
+      tags:
+      - Story
+      responses:
+        200:
+          description: List of locals supported by story
+          schema:
+            properties:
+              code:
+                type: integer
+              language:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Add language to a story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - $ref: '#/parameters/language'
+      tags:
+      - Story
+      responses:
+        200:
+          description: List of locals supported by story
+          schema:
+            properties:
+              code:
+                type: integer
+              language:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Remove language of a story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - $ref: '#/parameters/language'
+      tags:
+      - Story
+      responses:
+        200:
+          description: List of locals supported by story
+          schema:
+            properties:
+              code:
+                type: integer
+              language:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/translate:
+    post:
+      summary: Translate story to target language
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - name: language settings
+        description: Define source and target languages
+        in: body
+        required: true
+        schema:
+          properties:
+            sourceLanguage:
+              type: string
+            targetLanguage:
+              type: string
+      tags:
+      - Story
+      responses:
+        200:
+          description: Translated story object
+          schema:
+            properties:
+              code:
+                type: integer
+              story:
+                $ref: '#/definitions/Story'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /credits/story/{storyId}:
+    get:
+      summary: Get a list of credits of story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - AssetManagement
+      - Story
+      - Credit
+      responses:
+        200:
+          description: List of credits of story
+          schema:
+            properties:
+              code:
+                type: integer
+              animation:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              se:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              bgimage:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              image:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              bgm:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              others:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              video:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              not-categorized:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              face:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              fgimage:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/library/{libraryId}:
+    post:
+      summary: Add libraries to story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Story
+      - AssetManagement
+      responses:
+        200:
+          description: Get libraries array
+          schema:
+            properties:
+              code:
+                type: integer
+              libraries:
+                type: array
+                items:
+                  $ref: '#/definitions/Library'
+              message:
+                type: string
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Delete libraries to story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Story
+      - AssetManagement
+      responses:
+        200:
+          description: Get libraries array
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/validate:
+    get:
+      summary: Validate a story by ID
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Story
+      responses:
+        200:
+          description: Get oice error arrary
+          schema:
+            "$ref": "#/definitions/StoryError"
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/like:
+    post:
+      summary: Like a story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Story
+      responses:
+        200:
+          description: Like success
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Dislike a story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Story
+      responses:
+        200:
+          description: Dislike success
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/build:
+    get:
+      summary: Build all oice in a story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Story
+      responses:
+        200:
+          description: Batch id of oice builders
+          schema:
+            properties:
+              message:
+                type: string
+              batchId:
+                type: string
+              jobCount:
+                type: integer
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/featured:
+    get:
+      summary: Get all featured stories
+      tags:
+      - Story
+      responses:
+        200:
+          description: List of featured stories
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryFeatured'
+  /library:
+    get:
+      summary: Get libraries
+      tags:
+      - Library
+      - AssetManagement
+      responses:
+        200:
+          description: Get libraries array
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              public:
+                type: array
+                description: public libraries created by user
+                items:
+                  $ref: '#/definitions/Library'
+              private:
+                type: array
+                description: private libraries created by user
+                items:
+                  $ref: '#/definitions/Library'
+              forSale:
+                type: array
+                description: libraries sold by user
+                items:
+                  $ref: '#/definitions/Library'
+              selected:
+                type: array
+                description: libraries purchased by user and selected
+                items:
+                  $ref: '#/definitions/Library'
+              unselected:
+                type: array
+                description: libraries purchased by user but not selected
+                items:
+                  $ref: '#/definitions/Library'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+    post:
+      summary: Add library
+      parameters:
+      - name: meta
+        description: |
+          Meta of the library which is a serialize object, for example:
+
+          {
+            "name": "Three Little Pigs",
+            "description": "Library for Three Little Pigs",
+            "license": 0,
+            "type": "forSale",
+            "price": 2
+          }
+        in: formData
+        required: true
+        type: string
+      - name: coverStorage
+        in: formData
+        type: file
+      - name: ogImage
+        description: The og image of the oice
+        in: formData
+        required: false
+        type: file
+      consumes:
+      - multipart/form-data
+      tags:
+      - Library
+      - AssetManagement
+      responses:
+        200:
+          description: Add library object
+          schema:
+            properties:
+              library:
+                $ref: '#/definitions/Library'
+              code:
+                type: integer
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+  /library/{libraryId}:
+    get:
+      summary: Get a library by ID
+      parameters:
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Library
+      - AssetManagement
+      responses:
+        200:
+          description: Get library object
+          schema:
+            properties:
+              code:
+                type: integer
+              library:
+                $ref: '#/definitions/Library'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Update a library by ID
+      parameters:
+      - $ref: '#/parameters/library_id'
+      - name: meta
+        description: |
+          Meta of the library which is a serialize object, for example:
+
+          {
+            "name": "Three Little Pigs",
+            "description": "Library for Three Little Pigs",
+            "license": 0,
+            "price": 2,
+            "launchedAt": null,
+            "isLaunched": true
+          }
+        in: formData
+        type: string
+      - name: coverStorage
+        in: formData
+        type: file
+      consumes:
+      - multipart/form-data
+      tags:
+      - Library
+      - AssetManagement
+      responses:
+        200:
+          description: Update project object
+          schema:
+            properties:
+              library:
+                $ref: '#/definitions/Library'
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Delete library
+      parameters:
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Library
+      - AssetManagement
+      responses:
+        200:
+          description: Delete project object
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /library/{libraryId}/og:
+    get:
+      summary: Get library og
+      parameters:
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Library
+      - AssetManagement
+      responses:
+        200:
+          description: Library object
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              library:
+                $ref: '#/definitions/LibraryOG'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /library/{libraryId}/selection:
+    post:
+      summary: add library to user's libraries_selected
+      parameters:
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Library
+      - User
+      responses:
+        200:
+          description: Add library to user's libraries_selected success
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+    delete:
+      summary: remove library from user's libraries_selected
+      parameters:
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Library
+      - User
+      responses:
+        200:
+          description: Remove library from user's libraries_selected success
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+  /story/{storyId}/library:
+    get:
+      summary: Get libraries that are used in story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Library
+      - AssetManagement
+      responses:
+        200:
+          description: Get libraries array
+          schema:
+            properties:
+              code:
+                type: integer
+              selected:
+                type: array
+                description: libraries that are used in story
+                items:
+                  $ref: '#/definitions/Library'
+              mine:
+                type: array
+                description: libraries of users
+                items:
+                  $ref: '#/definitions/Library'
+              public:
+                type: array
+                description: public libraries
+                items:
+                  $ref: '#/definitions/Library'
+              message:
+                type: string
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/oice:
+    get:
+      summary: Get oice list
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Get oice arrary
+          schema:
+            properties:
+              code:
+                type: integer
+              oices:
+                type: array
+                items:
+                  $ref: '#/definitions/Oice'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Add oice
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - name: filename
+        in: formData
+        required: true
+        type: string
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Add oice object
+          schema:
+            properties:
+              code:
+                type: integer
+              oice:
+                $ref: '#/definitions/Oice'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /oice/{oiceId}/read:
+    post:
+      summary: Update read progress
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Update read progress success
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /oice/featured:
+    get:
+      summary: Get featured oice
+      tags:
+      - Oice
+      responses:
+        200:
+          description: An oice object
+          schema:
+            properties:
+              code:
+                type: integer
+              featuredOices:
+                type: array
+                items:
+                  $ref: "#/definitions/Oice"
+              message:
+                type: string
+  /oice/tutorial:
+    get:
+      summary: Get tutorial oices
+      tags:
+      - Oice
+      responses:
+        200:
+          description: List of oices
+          schema:
+            properties:
+              code:
+                type: integer
+              oices:
+                type: array
+                items:
+                  $ref: "#/definitions/Oice"
+              message:
+                type: string
+  /oice/communication:
+    get:
+      summary: Oice communicate with server
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Response of the communication
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              result:
+                type: object
+  /user/{userId}/story/{storyId}:
+    get:
+      summary: Get list of public oice given story id
+      parameters:
+        - $ref: '#/parameters/user_id'
+        - $ref: '#/parameters/story_id'
+      tags:
+      - User
+      responses:
+        200:
+          description: List of public oice of given story_id
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              oices:
+                type: array
+                items:
+                  $ref: '#/definitions/OiceProfile'
+  /oice/{oiceId}/viewCount:
+    post:
+      summary: increment view count of oice by 1
+      parameters:
+        - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: status
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+  /oice/uuid/{oiceUuid}:
+    get:
+      summary: Get oice by UUID
+      parameters:
+      - name: oiceUuid
+        in: path
+        description: oice uuid
+        required: true
+        type: integer
+        format: int64
+      tags:
+      - Oice
+      responses:
+        200:
+          description: An oice object
+          schema:
+            properties:
+              code:
+                type: integer
+              oice:
+                $ref: "#/definitions/Oice"
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /oice/id/{oiceId}:
+    get:
+      summary: Get oice by ID
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: An oice object
+          schema:
+            properties:
+              code:
+                type: integer
+              oice:
+                $ref: '#/definitions/Oice'
+              message:
+                type: string
+    post:
+      summary: Update oice
+      consumes:
+      - multipart/form-data
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      - name: meta
+        description: |
+          Meta of the oice which is a serialize object, for example:
+
+          {
+            "name": "Hello World",
+            "locale": "zh_HK",
+            "isShowAd": true,
+            "sharingOption": 1
+          }
+        in: formData
+        required: false
+        type: string
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Update oice object
+          schema:
+            properties:
+              code:
+                type: integer
+              oice:
+                $ref: '#/definitions/Oice'
+              message:
+                type: string
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Delete oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Delete oice success
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /credits/oice/{oiceId}:
+    get:
+      summary: Get a list of credits of oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - AssetManagement
+      - Oice
+      - Credit
+      responses:
+        200:
+          description: List of credits of oice
+          schema:
+            properties:
+              code:
+                type: integer
+              grouped:
+                type: object
+                properties:
+                  animation:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  se:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  bgimage:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  image:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  bgm:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  others:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  video:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  not-categorized:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  face:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+                  fgimage:
+                    type: array
+                    items:
+                      $ref: '#/definitions/User'
+              mini:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+              message:
+                type: string
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+
+  /oice/{oiceId}/more:
+    get:
+      summary: Get a list of related oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: List of related oice objects
+          schema:
+            properties:
+              code:
+                type: integer
+              oices:
+                type: array
+                items:
+                  $ref: '#/definitions/Oice'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+
+  /oice/{oiceId}/export:
+    get:
+      summary: Download oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      produces:
+      - application/zip
+      responses:
+        200:
+          description: Downloaded oice
+          schema:
+            type: file
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /oice/{oiceId}/build:
+    get:
+      summary: Build oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Build oice
+          schema:
+            properties:
+              message:
+                type: string
+              view_url:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /oice/buildall:
+    get:
+      summary: Build all oice that has sharingOption == 0
+      tags:
+      - Oice
+      responses:
+        200:
+          description: BatchId of the oice builders
+          schema:
+            properties:
+              message:
+                type: string
+              batchId:
+                type: string
+              jobCount:
+                type: integer
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /oice/{oiceId}/preview:
+    get:
+      summary: Build preview oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Build preview oice
+          schema:
+            properties:
+              message:
+                type: string
+              view_url:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /oice/{oiceId}/fork:
+    post:
+      summary: Fork oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Fork oice
+          schema:
+            properties:
+              oice:
+                $ref: '#/definitions/Oice'
+              message:
+                type: string
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+  /oice/{oiceId}/copy:
+    post:
+      summary: copy oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      - name: storyId
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            storyId:
+              type: integer
+      tags:
+      - Oice
+      responses:
+        200:
+          description: copy oice
+          schema:
+            properties:
+              oice:
+                $ref: '#/definitions/Oice'
+              message:
+                type: string
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+  /oice/{oiceId}/translate:
+    post:
+      summary: Translate oice to target language
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      - name: Language settings
+        description: Define source and target languages
+        in: body
+        required: true
+        schema:
+          properties:
+            sourceLanguage:
+              type: string
+            targetLanguage:
+              type: string
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Translated oice object
+          schema:
+            properties:
+              code:
+                type: integer
+              oice:
+                $ref: '#/definitions/Oice'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/oice/{oiceId}/export:
+    get:
+      summary: Export oice
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Export oice
+          schema:
+            properties:
+              message:
+                type: string
+              id:
+                type: integer
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /story/{storyId}/oice/{oiceId}/validate:
+    get:
+      summary: Validate oice
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Error messages
+          schema:
+            properties:
+              code:
+                type: integer
+              errors:
+                $ref: '#/definitions/Error'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /story/{storyId}/oice/order:
+    post:
+      summary: Update oices order
+      parameters:
+      - $ref: '#/parameters/story_id'
+      - name: oiceList
+        in: body
+        required: true
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/Oice'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Update oices list
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /macro:
+    get:
+      summary: Get marco list
+      tags:
+      - Macro
+      responses:
+        200:
+          description: Get marco list array
+          schema:
+            properties:
+              code:
+                type: integer
+              macros:
+                type: array
+                items:
+                  $ref: '#/definitions/Macro'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Add macro
+      parameters:
+      - name: macro
+        description: Macro values
+        in: body
+        required: true
+        schema:
+          properties:
+            chineseName:
+              type: string
+              description: Macro name
+            name:
+              type: string
+              description: Macro tag name
+            content:
+              type: string
+              description: Macro content
+      tags:
+      - Macro
+      responses:
+        200:
+          description: Add macro object
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              macro:
+                $ref: '#/definitions/Macro'
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /macro/{macroId}:
+    get:
+      summary: Get macro by ID
+      parameters:
+      - $ref: '#/parameters/macro_id'
+      tags:
+      - Macro
+      responses:
+        200:
+          description: Get macro info
+          schema:
+            properties:
+              code:
+                type: integer
+              macro:
+                $ref: '#/definitions/MacroDetails'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Update macro by ID
+      parameters:
+      - $ref: '#/parameters/macro_id'
+      - name: macro
+        description: Macro values
+        in: body
+        required: true
+        schema:
+          properties:
+            chineseName:
+              type: string
+              description: Macro name
+            name:
+              type: string
+              description: Macro tag name
+            content:
+              type: string
+              description: Macro content
+            isHidden:
+              type: boolean
+              description: Macro is hidden or not
+      tags:
+      - Macro
+      responses:
+        200:
+          description: Update macro object
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              macro:
+                $ref: '#/definitions/Macro'
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /attribute_definition:
+    post:
+      summary: Add attribute definition
+      parameters:
+      - name: attributeDefinition
+        description: Attribute definition values
+        in: body
+        required: true
+        schema:
+          properties:
+            macroId:
+              type: integer
+              description: Macro id
+            type:
+              type: string
+              description: Asset type
+            assetTypeId:
+              type: integer
+              description: Asset type id
+            name:
+              type: string
+              description: Name
+            label:
+              type: string
+              description: Label
+            defaultValue:
+              type: string
+              description: Default value
+            required:
+              type: boolean
+              description: The attribute is required or not
+      tags:
+      - AttributeDefinition
+      responses:
+        200:
+          description: Attribute definition
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              attributionDefinition:
+                $ref: '#/definitions/AttributeDefinition'
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /attribute_definition/{attributeDefinitionId}:
+    post:
+      summary: Update attribute definition
+      parameters:
+      - $ref: '#/parameters/attribute_definition_id'
+      - name: attributeDefinition
+        description: Attribute definition values
+        in: body
+        required: true
+        schema:
+          properties:
+            type:
+              type: string
+              description: Asset type
+            assetTypeId:
+              type: integer
+              description: Asset type id
+            name:
+              type: string
+              description: Attribute name
+            label:
+              type: string
+              description: Label
+            defaultValue:
+              type: string
+              description: Default value
+            required:
+              type: boolean
+              description: The attribute is required or not
+      tags:
+      - AttributeDefinition
+      responses:
+        200:
+          description: Attribute definition
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              attributionDefinition:
+                $ref: '#/definitions/AttributeDefinition'
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /oice/{oiceId}/blocks:
+    get:
+      summary: Get block list
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Block
+      responses:
+        200:
+          description: Get block array
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              blocks:
+                type: array
+                items:
+                  $ref: '#/definitions/Block'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Add block
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      - name: block
+        description: Block values
+        in: body
+        required: true
+        schema:
+          properties:
+            macroId:
+              type: integer
+              description: Macro id of the block
+            parentId:
+              type: integer
+              description: Parent id of the block
+            isDrag:
+              type: boolean
+              description: The action is drag or not
+      tags:
+      - Block
+      responses:
+        200:
+          description: Add block object
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              block:
+                $ref: '#/definitions/Block'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+
+  /oice/{oiceId}/wordcount:
+    get:
+      summary: Get word count of oice
+      parameters:
+      - $ref: '#/parameters/oice_id'
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Word count
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              wordcount:
+                type: integer
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /block/{blockId}:
+    put:
+      summary: Update block(for update block order)
+      parameters:
+      - $ref: '#/parameters/block_id'
+      - name: parentId
+        description: Block values
+        in: body
+        required: true
+        schema:
+          properties:
+            parentId:
+              type: integer
+              description: Parent id of the block
+      tags:
+        - Block
+      responses:
+        200:
+          description: Update block object
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              block:
+                $ref: '#/definitions/Block'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Update block(for update block attribute)
+      parameters:
+      - $ref: '#/parameters/block_id'
+      - name: attributes
+        in: body
+        description: object of attribute value of block that keyed by attribute name
+        required: true
+        schema:
+          type: object
+      tags:
+        - Block
+      responses:
+        200:
+          description: Update block object
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              block:
+                $ref: '#/definitions/Block'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Delete block
+      parameters:
+      - $ref: '#/parameters/block_id'
+      tags:
+      - Block
+      responses:
+        200:
+          description: Delete block object
+          schema:
+            properties:
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /block/{blockId}/translate:
+    post:
+      summary: Translate block to target language
+      parameters:
+      - $ref: '#/parameters/block_id'
+      - name: Language settings
+        description: Define source and target languages
+        in: body
+        required: true
+        schema:
+          properties:
+            sourceLanguage:
+              type: string
+            targetLanguage:
+              type: string
+      tags:
+      - Block
+      responses:
+        200:
+          description: Translated block object
+          schema:
+            properties:
+              code:
+                type: integer
+              block:
+                $ref: '#/definitions/Story'
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /blocks:
+    put:
+      summary: Update blocks
+      parameters:
+      - name: blocksToBeUpdated
+        description: Block values
+        in: body
+        required: true
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              blockID:
+                type: integer
+              attributes:
+                $ref: '#/definitions/Attribute'
+      tags:
+      - Block
+      responses:
+        200:
+          description: Update blocks array
+          schema:
+            properties:
+              message:
+                type: string
+              blocks:
+                type: array
+                items:
+                  $ref: '#/definitions/Block'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /asset_type:
+    get:
+      summary: Get asset type list
+      tags:
+      - Asset
+      - AssetManagement
+      responses:
+        200:
+          description: Asset type list
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              assetTypes:
+                type: array
+                items:
+                  $ref: '#/definitions/AssetType'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /asset/{assetId}:
+    post:
+      summary: Update an asset by ID
+      parameters:
+      - $ref: '#/parameters/asset_id'
+      - name: meta
+        description: |
+          Meta of the oice which is a serialize object, for example:
+          assetTypeId must be required:
+
+          {
+            "nameTw": "",
+            "nameEn": "apple",
+            "nameJp": "",
+            "credits": ["lakoo", "demo"]
+          }
+        in: formData
+        required: true
+        type: string
+      - name: asset
+        in: formData
+        description: Asset file
+        type: file
+      consumes:
+      - multipart/form-data
+      tags:
+      - Asset
+      - AssetManagement
+      responses:
+        200:
+          description: Update an asset
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    put:
+      summary: Update asset(for update asset order)
+      parameters:
+      - $ref: '#/parameters/asset_id'
+      - name: order
+        description: Asset values
+        in: body
+        required: true
+        schema:
+          properties:
+            order:
+              type: integer
+              description: New order of asset
+      tags:
+        - Asset
+        - AssetManagement
+      responses:
+        200:
+          description: Update asset object
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              block:
+                $ref: '#/definitions/Asset'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Delete an asset by ID
+      parameters:
+      - $ref: '#/parameters/asset_id'
+      tags:
+      - Asset
+      - AssetManagement
+      responses:
+        200:
+          description: Delete an asset
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/assets:
+    get:
+      summary: Get assets list by story ID
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Asset
+      - AssetManagement
+      responses:
+        200:
+          description: Asset list
+          schema:
+            properties:
+              code:
+                type: integer
+              assets:
+                type: array
+                items:
+                  $ref: '#/definitions/Asset'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /library/{libraryId}/assets/{assetType}:
+    get:
+      summary: Get assets list by library ID and asset type ID
+      parameters:
+      - $ref: '#/parameters/library_id'
+      - $ref: '#/parameters/asset_type'
+      tags:
+      - Asset
+      - AssetManagement
+      responses:
+        200:
+          description: Asset list
+          schema:
+            properties:
+              code:
+                type: integer
+              assets:
+                type: array
+                items:
+                  $ref: '#/definitions/Asset'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Add an asset in library
+      parameters:
+      - $ref: '#/parameters/library_id'
+      - $ref: '#/parameters/asset_type'
+      - name: meta
+        description: |
+          Meta of the oice which is a serialize object, for example:
+
+          {
+            "nameTw": "",
+            "nameEn": "apple",
+            "nameJp": "",
+            "characterId": 1,
+            "order": 1,
+            "credits": ["lakoo", "demo"]
+          }
+        in: formData
+        required: true
+        type: string
+      - name: asset
+        in: formData
+        description: Asset file
+        required: true
+        type: file
+      consumes:
+      - multipart/form-data
+      tags:
+      - Asset
+      - AssetManagement
+      responses:
+        200:
+          description: Add asset
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              asset:
+                $ref: '#/definitions/Asset'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+
+  /asset/{assetId}/download:
+    get:
+      summary: Download an asset
+      parameters:
+      - $ref: '#/parameters/asset_id'
+      tags:
+      - Asset
+      - AssetManagement
+      responses:
+        302:
+          description: Asset Found
+          schema:
+            type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/character:
+    get:
+      summary: Get character list by story ID
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Character
+      - AssetManagement
+      responses:
+        200:
+          description: Character list
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              characters:
+                type: array
+                items:
+                  $ref: '#/definitions/Character'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /story/{storyId}/wordcount:
+    get:
+      summary: Get word count of story
+      parameters:
+      - $ref: '#/parameters/story_id'
+      tags:
+      - Story
+      responses:
+        200:
+          description: Word count
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              wordcount:
+                type: integer
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /library/{libraryId}/character:
+    get:
+      summary: Get character list by library ID
+      parameters:
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Character
+      - AssetManagement
+      responses:
+        200:
+          description: Character list
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              characters:
+                type: array
+                items:
+                  $ref: '#/definitions/Character'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Create a character in library
+      parameters:
+      - $ref: '#/parameters/library_id'
+      - name: character
+        description: Character values
+        in: body
+        required: true
+        schema:
+          properties:
+            nameEn:
+              type: string
+              description: Name
+            nameTw:
+              type: string
+              description: Name
+            nameJp:
+              type: string
+              description: Name
+            width:
+              type: integer
+              description: Width
+            height:
+              type: integer
+              description: Height
+            order:
+              type: integer
+              description: order of the character
+            config:
+              "$ref": "#/definitions/CharacterConfig"
+      tags:
+      - Character
+      - AssetManagement
+      responses:
+        200:
+          description: Create character
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              character:
+                $ref: '#/definitions/Character'
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /character/{characterId}:
+    get:
+      summary: Get a character by ID
+      parameters:
+      - $ref: '#/parameters/character_id'
+      tags:
+        - Character
+        - AssetManagement
+      responses:
+          200:
+            description: A character
+            schema:
+              properties:
+                code:
+                  type: integer
+                message:
+                  type: string
+                character:
+                  $ref: '#/definitions/Character'
+          400:
+            description: Invalid request
+            schema:
+              $ref: '#/definitions/ErrorInvalid'
+          401:
+            description: You have to login to view this item
+            schema:
+              $ref: '#/definitions/ErrorLoginIsNeeded'
+          404:
+            description: The item you are looking for cannot be found
+            schema:
+              $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Update a character by ID
+      parameters:
+      - $ref: '#/parameters/character_id'
+      - name: character
+        description: Character values
+        in: body
+        required: true
+        schema:
+          properties:
+            isGeneric:
+              type: boolean
+              description: Define whether it is a generic character
+            nameEn:
+              type: string
+              description: Name
+            nameTw:
+              type: string
+              description: Name
+            nameJp:
+              type: string
+              description: Name
+            order:
+              type: integer
+              description: Order
+            width:
+              type: integer
+              description: Width
+            height:
+              type: integer
+              description: Height
+            config:
+              "$ref": "#/definitions/CharacterConfig"
+      tags:
+      - Character
+      - AssetManagement
+      responses:
+        200:
+          description: Update character
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              character:
+                $ref: '#/definitions/Character'
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    put:
+      summary: Update character(for update character order)
+      parameters:
+      - $ref: '#/parameters/character_id'
+      - name: order
+        description: Character values
+        in: body
+        required: true
+        schema:
+          properties:
+            order:
+              type: integer
+              description: new order of the character
+      tags:
+        - Character
+        - AssetManagement
+      responses:
+        200:
+          description: Update character object
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              block:
+                $ref: '#/definitions/Character'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Delete a character by ID
+      parameters:
+      - $ref: '#/parameters/character_id'
+      tags:
+      - Character
+      - AssetManagement
+      responses:
+        200:
+          description: Delete an asset
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        403:
+          description: You don\'t have permission to view this item
+          schema:
+            $ref: '#/definitions/ErrorNoPermission'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /character/{characterId}/language/{language}:
+    get:
+      summary: Get supported languages of a character
+      parameters:
+      - $ref: '#/parameters/character_id'
+      - $ref: '#/parameters/language'
+      tags:
+      - Character
+      responses:
+        200:
+          description: List of locals supported by character
+          schema:
+            properties:
+              code:
+                type: integer
+              language:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    post:
+      summary: Add language to a character
+      parameters:
+      - $ref: '#/parameters/character_id'
+      - $ref: '#/parameters/language'
+      tags:
+      - Character
+      responses:
+        200:
+          description: List of locals supported by character
+          schema:
+            properties:
+              code:
+                type: integer
+              language:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+    delete:
+      summary: Remove language of a character
+      parameters:
+      - $ref: '#/parameters/character_id'
+      - $ref: '#/parameters/language'
+      tags:
+      - Character
+      responses:
+        200:
+          description: List of locals supported by character
+          schema:
+            properties:
+              code:
+                type: integer
+              language:
+                type: array
+                items:
+                  type: string
+              message:
+                type: string
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /store/price:
+    get:
+      summary: Get store pricing
+      tags:
+      - Store
+      responses:
+        200:
+          description: Price list
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              priceTiers:
+                type: array
+                items:
+                  $ref: '#/definitions/PriceTier'
+  /store/library:
+    get:
+      summary: Get libraries in store
+      tags:
+      - Store
+      - Library
+      responses:
+        200:
+          description: Get libraries array
+          schema:
+            properties:
+              code:
+                type: integer
+              libraries:
+                type: array
+                items:
+                  $ref: '#/definitions/LibraryStore'
+              message:
+                type: string
+  /store/library/list/free:
+    get:
+      summary: Get free libraries in store sorted by popularity
+      tags:
+      - Store
+      - Library
+      responses:
+        200:
+          description: Get libraries array
+          schema:
+            properties:
+              code:
+                type: integer
+              libraries:
+                type: array
+                items:
+                  $ref: '#/definitions/LibraryStore'
+              message:
+                type: string
+  /store/library/list/latest:
+    get:
+      summary: Get latest released libraries in store
+      tags:
+      - Store
+      - Library
+      responses:
+        200:
+          description: Get libraries array
+          schema:
+            properties:
+              code:
+                type: integer
+              libraries:
+                type: array
+                items:
+                  $ref: '#/definitions/LibraryStore'
+              message:
+                type: string
+  /store/library/list/featured:
+    get:
+      summary: Get features libraries in store
+      tags:
+      - Store
+      - Library
+      responses:
+        200:
+          description: Get libraries array
+          schema:
+            properties:
+              code:
+                type: integer
+              libraries:
+                type: array
+                items:
+                  $ref: '#/definitions/LibraryStore'
+              message:
+                type: string
+  /store/library/{libraryId}:
+    get:
+      summary: Get detail of a library in store
+      parameters:
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Store
+      - Library
+      responses:
+        200:
+          description: Detail of target library
+          schema:
+            properties:
+              code:
+                type: integer
+              libraries:
+                type: array
+                items:
+                  $ref: '#/definitions/LibraryStoreDetail'
+              message:
+                type: string
+  /store/library/{libraryId}/assets/{assetType}:
+    get:
+      summary: Get assets list by library ID and asset type ID in store
+      parameters:
+      - $ref: '#/parameters/library_id'
+      - $ref: '#/parameters/asset_type'
+      tags:
+      - Asset
+      - Store
+      responses:
+        200:
+          description: Asset list
+          schema:
+            properties:
+              code:
+                type: integer
+              assets:
+                type: array
+                items:
+                  $ref: '#/definitions/Asset'
+
+  /store/library/{libraryId}/character:
+    get:
+      summary: Get character list by library ID (Public)
+      parameters:
+      - $ref: '#/parameters/library_id'
+      tags:
+      - Character
+      - AssetManagement
+      - Store
+      responses:
+        200:
+          description: Character list
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              characters:
+                type: array
+                items:
+                  $ref: '#/definitions/Character'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /store/library/{libraryId}/purchase:
+    post:
+      summary: Purchase a library in store
+      parameters:
+      - $ref: '#/parameters/library_id'
+      - name: credential
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            token:
+              type: string
+              description: The stripe token
+      tags:
+      - User
+      - Store
+      responses:
+        200:
+          description: User log in successfully
+          schema:
+            properties:
+              code:
+                type: integer
+              user:
+                $ref: '#/definitions/User'
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        default:
+          description: unexpected error
+          schema:
+            properties:
+              code:
+                type: integer
+                description: The error code
+              error:
+                type: string
+                description: The detail of the error
+  /log/{logName}:
+    post:
+      summary: Log by logName
+      parameters:
+      - $ref: '#/parameters/logName'
+      - name: log
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            body:
+              type: string
+              description: json body
+      tags:
+      - Log
+      responses:
+        200:
+          description: Log successfully
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+  /testflight/invitation:
+    post:
+      summary: Add TestFlight tester
+      parameters:
+      - name: tester
+        description: Tester information
+        in: body
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+              description: The tester email for sending invitation
+            firstName:
+              type: string
+              description: The first name of the tester (Optional)
+            lastName:
+              type: string
+              description: The first name of the tester (Optional)
+      tags:
+      - TestFlight
+      responses:
+        200:
+          description: Add tester successfully
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+  /testflight/invitation/typeform:
+    post:
+      summary: Add TestFlight tester from typeform webhook
+      parameters:
+      - name: payload
+        description: The typeform webhook payload, see https://www.typeform.com/help/webhooks/#payload
+        in: body
+        required: true
+        schema:
+          properties:
+            event_id:
+              type: string
+            event_type:
+              type: string
+            form_response:
+              type: object
+      tags:
+      - TestFlight
+      responses:
+        200:
+          description: Add tester successfully
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+        400:
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+definitions:
+  Story:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+      language:
+        type: string
+      author:
+        $ref: '#/definitions/User'
+      updatedAt:
+        type: string
+        format: date-time
+      coverStorage:
+        type: string
+  StoryProfile:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+      cover:
+        type: string
+      oiceUuid:
+        type: string
+  StoryApp:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+      cover:
+        type: string
+      oiceUuid:
+        type: string
+      oiceCount:
+        type: integer
+      likeCount:
+        type: integer
+      shareUrl:
+        type: string
+      updatedAt:
+        type: string
+        format: date-time
+      hasLiked:
+        type: boolean
+  StoryFeatured:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+      cover:
+        type: string
+      titleLogo:
+        type: string
+      heroImage:
+        type: string
+      oice:
+        $ref: '#/definitions/Oice'
+  Library:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+      license:
+        type: integer
+      author:
+        $ref: '#/definitions/User'
+      updatedAt:
+        type: string
+        format: date-time
+      coverStorage:
+        type: string
+      isPublic:
+        type: boolean
+      isDefault:
+        type: boolean
+      price:
+        type: number
+      launchedAt:
+        type: string
+        format: date-time
+      isLaunched:
+        type: boolean
+      assetCount:
+        type: integer
+  LibraryOG:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+      cover:
+        type: string
+  LibraryProfile:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      cover:
+        type: string
+  LibraryStore:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      cover:
+        type: string
+      priority:
+        type: integer
+      coverStorage:
+        type: string
+      price:
+        type: number
+      license:
+        type: integer
+      isPublic:
+        type: boolean
+      isNew:
+        type: boolean
+      isRecentUpdated:
+        type: boolean
+      assetCount:
+        type: integer
+  LibraryStoreDetail:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      cover:
+        type: string
+      priority:
+        type: integer
+      coverStorage:
+        type: string
+      price:
+        type: number
+      license:
+        type: integer
+      isPublic:
+        type: boolean
+      isNew:
+        type: boolean
+      isRecentUpdated:
+        type: boolean
+      assetCount:
+        type: integer
+      description:
+        type: string
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+      launchedAt:
+        type: string
+        format: date-time
+      author:
+        $ref: '#/definitions/User'
+      credits:
+        $ref: '#/definitions/User'
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: ID of the user
+      email:
+        type: string
+        description: Email of the user
+      displayName:
+        type: string
+      token:
+        type: string
+      role:
+        type: string
+      description:
+        type: string
+      seekingSubscriptionMessage:
+        type: string
+      language:
+        type: string
+      avatar:
+        type: string
+      expireDate:
+        type: string
+        format: date-time
+      isTrial:
+        type: boolean
+      isCancelled:
+        type: boolean
+  UserMin:
+    type: object
+    properties:
+      id:
+        type: integer
+      email:
+        type: string
+        description: Email of the user
+      displayName:
+        type: string
+      avatar:
+        type: string
+  UserCredit:
+    type: object
+    properties:
+      id:
+        type: integer
+      displayName:
+        type: string
+      description:
+        type: string
+      seekingSubscriptionMessage:
+        type: string
+      avatar:
+        type: string
+  UserLinkType:
+    type: object
+    properties:
+      alias:
+        type: string
+      name:
+        type: string
+      linkRegex:
+        type: string
+  UserLink:
+    type: object
+    properties:
+      id:
+        type: integer
+      typeAlias:
+        type: string
+      label:
+        type: string
+      link:
+        type: string
+  image:
+    type: object
+    properties:
+      origin:
+        type: string
+        description: origin cover image
+      button:
+        type: string
+        description: cover image(200*200px) with play button
+      cover:
+        type: string
+        description: cover image(200*200px)
+  ogImage:
+    type: object
+    properties:
+      origin:
+        type: string
+        description: origin og image(1200*360px)
+      button:
+        type: string
+        description: og image(1200*360px) with play button
+      120x63:
+        type: string
+        description: og image(120*63px)
+      600x315:
+        type: string
+        description: og image(600*315px)
+  Oice:
+    type: object
+    properties:
+      id:
+        type: integer
+      uuid:
+        type: string
+      storyId:
+        type: integer
+      storyName:
+        type: string
+      storyCover:
+        type: string
+      name:
+        type: string
+      order:
+        type: integer
+      title:
+        type: string
+      description:
+        type: string
+      image:
+        $ref: '#/definitions/image'
+      ogTitle:
+        type: string
+      ogDescription:
+        type: string
+      ogImage:
+        $ref: '#/definitions/ogImage'
+      locale:
+        type: string
+      isShowAd:
+        type: boolean
+      author:
+        $ref: '#/definitions/UserCredit'
+      updatedAt:
+        type: string
+        format: date-time
+      sharingOption:
+        type: integer
+      hasPreviewed:
+        type: boolean
+      hasPublished:
+        type: boolean
+      url:
+        type: string
+      previewUrl:
+        type: string
+      shareUrl:
+        type: string
+      tutorialState:
+        type: array
+        items:
+          type: boolean
+      hasLiked:
+        type: boolean
+      nextEpisdoe:
+        $ref: '#/definitions/OiceMin'
+  OiceProfile:
+    type: object
+    properties:
+      id:
+        type: integer
+      uuid:
+        type: string
+      episode:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+      cover:
+        type: string
+  OiceMin:
+    type: object
+    properties:
+      id:
+        type: integer
+      uuid:
+        type: string
+      storyId:
+        type: integer
+      name:
+        type: string
+      order:
+        type: integer
+      title:
+        type: string
+      description:
+        type: string
+      image:
+        $ref: '#/definitions/image'
+  Error:
+    type: object
+    properties:
+      message:
+        type: string
+  StoryError:
+    type: object
+    properties:
+      storyErrors:
+        type: array
+        items:
+          type: string
+      code:
+        type: string
+      errors:
+        $ref: '#/definitions/Error'
+  Macro:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        description: The oice tag name
+        type: string
+      isHidden:
+        type: boolean
+  MacroDetails:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      isHidden:
+        type: boolean
+      attributes:
+        type: array
+        items:
+          $ref: '#/definitions/AttributeDefinition'
+  Block:
+    type: object
+    properties:
+      id:
+        type: integer
+      oiceId:
+        type: integer
+      macroId:
+        type: integer
+      macroName:
+        type: string
+      attributes:
+        type: object
+        properties:
+          attributesName:
+            $ref: '#/definitions/Attribute'
+      parentId:
+        description: Optional return in some API
+        type: integer
+  AttributeDefinition:
+    type: object
+    properties:
+      id:
+        type: integer
+      macroId:
+        type: integer
+      label:
+        type: string
+      name:
+        type: string
+      assetType:
+        $ref: '#/definitions/AssetType'
+      defaultValue:
+        type: string
+      required:
+        type: boolean
+      type:
+        type: integer
+  Attribute:
+    type: object
+    properties:
+      id:
+        type: integer
+      value:
+        type: string
+      isAsset:
+        type: boolean
+      asset:
+        $ref: '#/definitions/Asset'
+      attributes:
+        $ref: '#/definitions/AttributeDefinition'
+  AssetType:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        description: Folder name in novelsphere.js project folder
+        type: string
+      type:
+        type: string
+  Asset:
+    type: object
+    properties:
+      id:
+        type: integer
+      nameTw:
+        type: string
+      nameEn:
+        type: string
+      nameJp:
+        type: string
+      libraryId:
+        type: integer
+      types:
+        $ref: '#/definitions/AssetType'
+      contentType:
+        type: string
+      order:
+        type: integer
+      url:
+        type: string
+      tag:
+        type: string
+  Character:
+    type: object
+    properties:
+      id:
+        type: integer
+      libraryId:
+        type: integer
+      name:
+        type: string
+      key:
+        type: string
+      order:
+        type: integer
+      width:
+        type: integer
+      height:
+        type: integer
+      config:
+        "$ref": "#/definitions/CharacterConfig"
+      isGeneric:
+        type: boolean
+      fgimages:
+        type: array
+        items:
+          "$ref": "#/definitions/Asset"
+  CharacterConfig:
+    type: object
+    properties:
+      xDr:
+        type: integer
+      pathm:
+        type: string
+      xr:
+        type: integer
+      xl:
+        type: integer
+      pathl:
+        type: string
+      xDm:
+        type: integer
+      yDr:
+        type: integer
+      xDl:
+        type: integer
+      pathDl:
+        type: string
+      edgecolor:
+        type: string
+      order:
+        type: integer
+      xs:
+        type: integer
+      yl:
+        type: integer
+      ym:
+        type: integer
+      name:
+        type: string
+      yr:
+        type: integer
+      xm:
+        type: integer
+      pathDm:
+        type: string
+      ys:
+        type: integer
+      pathDr:
+        type: string
+      pathr:
+        type: string
+      yDl:
+        type: integer
+      yDm:
+        type: integer
+      frame:
+        type: string
+  PriceTier:
+    type: object
+    properties:
+      id:
+        type: integer
+      tier:
+        type: integer
+      price:
+        type: number
+  ErrorInvalid:
+    type: object
+    properties:
+      code:
+        type: integer
+        description: 400 - constant value, indicate invalid
+      message:
+        type: string
+        description: The detail of the message
+  ErrorLoginIsNeeded:
+    type: object
+    properties:
+      code:
+        type: integer
+        description: 401 - constant value, indicate login needed
+      message:
+        type: string
+        description: The detail of the message
+  ErrorNoPermission:
+    type: object
+    properties:
+      code:
+        type: integer
+        description: 403 - constant value, indicate no permission
+      message:
+        type: string
+        description: The detail of the message
+  ErrorItemNotFound:
+    type: object
+    properties:
+      code:
+        type: integer
+        description: 404 - constant value, indicate item not found
+      message:
+        type: string
+        description: The detail of the message
+parameters:
+  story_id:
+    name: storyId
+    in: path
+    description: ID of the story
+    required: true
+    type: integer
+    format: int64
+  library_id:
+    name: libraryId
+    in: path
+    description: ID of the library
+    required: true
+    type: integer
+    format: int64
+  oice_id:
+    name: oiceId
+    in: path
+    description: ID of the oice
+    required: true
+    type: integer
+    format: int64
+  block_id:
+    name: blockId
+    in: path
+    description: ID of the block
+    required: true
+    type: integer
+    format: int64
+  attribute_definition_id:
+    name: attributeDefinitionId
+    in: path
+    description: ID of the attribute definition
+    required: true
+    type: integer
+    format: int64
+  asset_id:
+    name: assetId
+    in: path
+    description: ID of the asset
+    required: true
+    type: integer
+    format: int64
+  asset_type_id:
+    name: assetTypeId
+    in: path
+    description: ID of the asset type
+    required: true
+    type: integer
+    format: int64
+  asset_type:
+    name: assetType
+    in: path
+    description: folder_name of the asset type
+    required: true
+    type: string
+  character_id:
+    name: characterId
+    in: path
+    description: ID of the character
+    required: true
+    type: integer
+    format: int64
+  macro_id:
+    name: macroId
+    in: path
+    description: ID of the macro
+    required: true
+    type: integer
+    format: int64
+  user_id:
+    name: userId
+    in: path
+    description: ID of the user
+    required: true
+    type: integer
+    format: int64
+  user_link_id:
+    name: userLinkId
+    in: path
+    description: ID of the UserLink
+    required: true
+    type: integer
+    format: int64
+  prefix:
+    name: prefix
+    in: path
+    description: User search prefix
+    required: true
+    type: string
+  logName:
+    name: logName
+    in: path
+    description: Name (function) to log
+    required: true
+    type: string
+  language:
+    name: language
+    in: path
+    description: language code
+    required: true
+    type: string
