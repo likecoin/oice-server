@@ -5,7 +5,7 @@ import json
 import logging
 import re
 
-from urllib.parse import quote_plus
+from urllib.parse import quote
 from modmod.exc import ValidationError
 from subprocess import check_output, CalledProcessError
 from . import character_script_data
@@ -132,7 +132,7 @@ class ScriptVisitor(object):
                     script += '@optionanswer storage="%s" target="%s" text="%s" oiceid=%d blockid=%d index=%d\n' % (
                         language + '.ks',
                         answer['target'],
-                        quote_plus(answer['content']).replace('%', '!'),  # Encode text
+                        quote(answer['content']).replace('%', '!'),  # Encode text
                         block.oice_id,
                         block.id,
                         answer_index,

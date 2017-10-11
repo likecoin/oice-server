@@ -55,8 +55,8 @@ class Library(Base, BaseMixin):
     purchased_users = relationship(
         "User",
         secondary=user_purchased_library,
-        secondaryjoin='''and_(
-            user_purchased_library.c.user_id==User.id,
+        primaryjoin='''and_(
+            user_purchased_library.c.library_id==Library.id,
             Library.is_deleted==false()
         )''',
         lazy='select',

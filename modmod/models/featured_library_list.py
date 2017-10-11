@@ -5,19 +5,19 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from modmod.models.base import (
     Base,
 )
-from .featured_library import FeaturedLibrary
 from . import DBSession
+
 
 class FeaturedLibraryList(Base):
     __tablename__ = 'featured_library_list'
 
     id = sa.Column('id', sa.Integer, primary_key=True)
-    alias = sa.Column('alias', sa.Unicode(length=256), nullable=False)
+    alias = sa.Column('alias', sa.Unicode(length=256), nullable=False, index=True, unique=True)
     is_active = sa.Column(sa.Boolean, nullable=False, server_default=false())
-    order = sa.Column(sa.Integer, nullable=False, server_default='0')
+    order = sa.Column(sa.Integer, nullable=False, index=True, server_default='0')
     libraries = relationship(
         'FeaturedLibrary',
-        primaryjoin="and_(FeaturedLibraryList.id==FeaturedLibrary.list_id)",
+        primaryjoin="FeaturedLibraryList.id==FeaturedLibrary.list_id",
         lazy='joined',
         cascade='',
         order_by='FeaturedLibrary.order',
@@ -37,6 +37,7 @@ class FeaturedLibraryList(Base):
             "name": self.get_name(language),
             "alias": self.alias,
         }
+
 
 class FeaturedLibraryListQuery:
 

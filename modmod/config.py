@@ -11,10 +11,10 @@ def includeme(config):
     global gcloud_bucket_id
     global gcloud_project_id
     global gcloud_json_path
-    global testflight_account
-    global testflight_pass
-    global testflight_provider_id
-    global testflight_app_id
+    global itunesconnect_account
+    global itunesconnect_pass
+    global itunesconnect_provider_id
+    global itunesconnect_app_id
     global testflight_testers_group_id
     ks_view_url = \
         config.get_settings().get('o2.view_url', None)
@@ -34,14 +34,14 @@ def includeme(config):
         config.get_settings().get('gcloud.json_path', None)
     if gcloud_json_path is not None:
         gcloud_json_path = os.path.abspath(gcloud_json_path)
-    testflight_account = \
-        config.get_settings().get('testflight.account', '')
-    testflight_pass = \
-        config.get_settings().get('testflight.pass', '')
-    testflight_provider_id = \
-        config.get_settings().get('testflight.provider_id', '')
-    testflight_app_id = \
-        config.get_settings().get('testflight.app_id', '')
+    itunesconnect_account = \
+        config.get_settings().get('itunesconnect.account', '')
+    itunesconnect_pass = \
+        config.get_settings().get('itunesconnect.pass', '')
+    itunesconnect_provider_id = \
+        config.get_settings().get('itunesconnect.provider_id', '')
+    itunesconnect_app_id = \
+        config.get_settings().get('itunesconnect.app_id', '')
     testflight_testers_group_id = \
         config.get_settings().get('testflight.testers_group_id', '')
 
@@ -98,21 +98,21 @@ def get_gcloud_json_path():
     global gcloud_json_path
     return gcloud_json_path
 
-def get_testflight_account():
-    global testflight_account
-    return testflight_account
+def get_itunesconnect_account():
+    global itunesconnect_account
+    return itunesconnect_account
 
-def get_testflight_pass():
-    global testflight_pass
-    return testflight_pass
+def get_itunesconnect_pass():
+    global itunesconnect_pass
+    return itunesconnect_pass
 
-def get_testflight_provider_id():
-    global testflight_provider_id
-    return testflight_provider_id
+def get_itunesconnect_provider_id():
+    global itunesconnect_provider_id
+    return itunesconnect_provider_id
 
-def get_testflight_app_id():
-    global testflight_app_id
-    return testflight_app_id
+def get_itunesconnect_app_id():
+    global itunesconnect_app_id
+    return itunesconnect_app_id
 
 def get_testflight_testers_group_id():
     global testflight_testers_group_id

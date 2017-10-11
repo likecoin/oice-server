@@ -3,10 +3,10 @@ import requests
 
 from modmod.exc import ValidationError
 from ..config import (
-    get_testflight_account,
-    get_testflight_pass,
-    get_testflight_provider_id,
-    get_testflight_app_id,
+    get_itunesconnect_account,
+    get_itunesconnect_pass,
+    get_itunesconnect_provider_id,
+    get_itunesconnect_app_id,
     get_testflight_testers_group_id,
 )
 
@@ -39,8 +39,8 @@ def send_testflight_invitation(email, first_name=None, last_name=None):
         'X-Apple-Widget-Key': get_itunesconnect_service_key(),
     }
     payload = {
-        'accountName': get_testflight_account(),
-        'password': get_testflight_pass(),
+        'accountName': get_itunesconnect_account(),
+        'password': get_itunesconnect_pass(),
     }
     response = session.post(url, headers=headers, json=payload)
     if response.status_code != requests.codes.ok:
@@ -62,8 +62,8 @@ def send_testflight_invitation(email, first_name=None, last_name=None):
                                               '/groups/%(group_id)s' +
                                               '/testers'
                                           ) % {
-                                              'provider_id': get_testflight_provider_id(),
-                                              'app_id': get_testflight_app_id(),
+                                              'provider_id': get_itunesconnect_provider_id(),
+                                              'app_id': get_itunesconnect_app_id(),
                                               'group_id': get_testflight_testers_group_id(),
                                           }
 
