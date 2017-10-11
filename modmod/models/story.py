@@ -39,13 +39,6 @@ class Story(Base, BaseMixin):
                     'Oice.sharing_option == 0,'
                     'Oice.state == 2)',
     )
-    libraries = relationship(
-        "Library",
-        secondary=story_library,
-        lazy='joined',
-        cascade="expunge",
-        backref='story'
-    )
     is_deleted = sa.Column(sa.Boolean, nullable=False, server_default=false())
     description = sa.Column(sa.Unicode(4096), nullable=False, server_default="")
     language = sa.Column(sa.Unicode(5), nullable=False, server_default="zh-HK")
@@ -67,16 +60,6 @@ class Story(Base, BaseMixin):
             acl = acl + [(Allow, user.email, 'get'),
                          (Allow, user.email, 'set')]
         return acl
-
-    @classmethod
-    def create(cls, session, *args, **kwargs):
-        # create normal project
-        # add default lib and itself to the lib projects list
-        self = cls(*args, **kwargs)
-        default_libs = LibraryQuery(session)\
-            .fetch_default_libs()
-        self.libraries.extend(default_libs)
-        return self
 
     @staticmethod
     def get_sample_story_id():

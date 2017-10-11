@@ -56,12 +56,6 @@ class MacroQuery:
     def query(self):
         return self.session.query(Macro)
 
-    def query_by_story(self, story):
-        library_id = [
-            library.id for library in story.libraries]
-        return self.session.query(Macro) \
-                        .filter(Macro.library_id.in_(library_id))
-
     def get_by_id(self, macro_id):
         macro = self.session.query(Macro) \
                          .filter(Macro.id == macro_id) \

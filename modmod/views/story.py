@@ -78,11 +78,6 @@ story_id_wordcount = Service(name='story_id_wordcount',
                              renderer='json',
                              factory=StoryFactory,
                              traverse='/{story_id}')
-story_library = Service(name='story_library',
-                        path='story/{story_id}/library/{library_id}',
-                        renderer='json',
-                        factory=StoryFactory,
-                        traverse='/{story_id}')
 story_build = Service(name='story_build',
                         path='story/{story_id}/build',
                         renderer='json',
@@ -359,37 +354,6 @@ def get_word_count_of_story(request):
         'message': 'ok',
         'code': 200,
         "wordcount": count_words_of_block(DBSession, story=story, language=query_language),
-    }
-
-
-@story_library.post(permission='set')
-def add_library_to_story(request):
-    library_id = request.matchdict['library_id']
-
-    story = request.context
-    library_to_be_added = LibraryQuery(DBSession).get_library_by_id(library_id)
-
-    story.libraries.append(library_to_be_added)
-
-    return {
-        'code': 200,
-        'message': 'ok',
-        'libraries': [l.serialize(fetch_story_query_language(request, l)) for l in set(story.libraries)],
-    }
-
-
-@story_library.delete(permission='set')
-def remove_library_from_story(request):
-    library_id = request.matchdict['library_id']
-
-    story = request.context
-    library_to_be_removed = LibraryQuery(DBSession).get_library_by_id(library_id)
-
-    story.libraries.remove(library_to_be_removed)
-
-    return {
-        'code': 200,
-        'message': 'ok',
     }
 
 

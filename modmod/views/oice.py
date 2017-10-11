@@ -197,7 +197,7 @@ def list_oice(request):
         .fetch_oice_list_by_id(story_id=request_story_id)
 
     return {
-        'oices': [oice.serialize(language=fetch_oice_query_language(request, oice)) for oice in oice_list],
+        'oices': [oice.serialize_editor(language=fetch_oice_query_language(request, oice)) for oice in oice_list],
         'code': 200,
         'message': 'ok'
     }
@@ -244,7 +244,7 @@ def add_oice(request):
     log_message(KAFKA_TOPIC_OICE, log_dict)
 
     return {
-        'oice': new_oice.serialize(language=fetch_oice_query_language(request, new_oice)),
+        'oice': new_oice.serialize_editor(language=fetch_oice_query_language(request, new_oice)),
         'code': 200,
         'message': 'ok'
     }
@@ -729,7 +729,7 @@ def get_tutorial_oice(request):
     return {
         'code': 200,
         'message': 'ok',
-        'oices': [o.oice.serialize(language=fetch_oice_query_language(request, o)) for o in tutorial_oices]
+        'oices': [o.oice.serialize_editor(language=fetch_oice_query_language(request, o)) for o in tutorial_oices]
     }
 
 

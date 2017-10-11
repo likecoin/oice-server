@@ -39,9 +39,6 @@ library_id_og = Service(name='library_id_og',
                         renderer='json',
                         factory=LibraryFactory,
                         traverse='/{library_id}')
-story_id_library = Service(name='story_id_library',
-                      path='story/{story_id}/library',
-                      renderer='json')
 library_id_selection = Service(name='library_id_selection',
                           path='library/{library_id}/selection',
                           renderer='json',
@@ -184,9 +181,6 @@ def add_library(request):
         # preselect library created by user
         user.libraries_selected.append(library)
 
-        for story in user.stories:
-            story.libraries.append(library)
-
         DBSession.add(library)
 
         # flush because we need an ID
@@ -271,28 +265,6 @@ def delete_library(request):
     return {
         'code': 200,
         'message': 'ok'
-    }
-
-@story_id_library.get(permission='get')
-def list_story_libraries(request):
-    story_id = request.matchdict['story_id']
-    story = StoryQuery(DBSession).get_story_by_id(story_id)
-    user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
-
-    # Get three kinds of libraries
-    #    selected: library using in story
-    #    mine: library of users
-    #    public: public library
-    selected = [p for p in story.libraries if not p.is_deleted]
-    mine_set = set([p for p in user.libraries if not p.is_deleted]) - set(selected)
-    public_set = set(LibraryQuery(DBSession).fetch_public_libs()) - mine_set - set(selected)
-
-    return {
-        'code': 200,
-        'selected': [a.serialize() for a in selected],
-        'mine': [a.serialize() for a in mine_set],
-        'public': [a.serialize() for a in public_set],
-        'message': 'ok',
     }
 
 @library_id_selection.post()

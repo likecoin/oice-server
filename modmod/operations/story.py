@@ -41,7 +41,6 @@ def fork_story(session, story, is_self_forking=False):
     story.import_handle(handle)
     make_transient(story)
     session.add(story)
-    story.libraries = original_story.libraries
     story.localizations = original_story.localizations
     session.flush()
     return story

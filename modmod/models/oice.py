@@ -190,24 +190,30 @@ class Oice(Base, BaseMixin):
         return (next_oice if next_oice.is_public() and next_oice.has_published else self).serialize_min(language)
 
     def serialize(self, user=None, language=None):
+        serialized_oice = self.serialize_editor(user, language)
+        serialized_oice['updatedAt'] = self.updated_at.isoformat()
+        serialized_oice['description'] = self.get_description(language)
+        serialized_oice['image'] = self.get_image_url_obj(language)
+        serialized_oice['author'] = self.story.users[0].serialize_credit()  # assume user[0] is author
+        serialized_oice['nextEpisode'] = self.get_next_episode(language)
+        serialized_oice['hasLiked'] = user in self.story.liked_users
+        serialized_oice['storyName'] = self.story.get_name(language)
+        serialized_oice['storyDescription'] = self.story.get_description(language)
+        serialized_oice['storyCover'] = self.story.get_cover_storage_url(language)
+        serialized_oice['ogTitle'] = self.get_og_title(language)
+        serialized_oice['ogDescription'] = self.get_og_description(language)
+        serialized_oice['ogImage'] = self.get_og_image_url_obj(language)
+        return serialized_oice
+
+    def serialize_editor(self, user=None, language=None):
         return {
             'id': self.id,
             'uuid': self.uuid,
             'storyId': int(self.story_id),
-            'storyName': self.story.get_name(language),
-            'storyDescription': self.story.get_description(language),
-            'storyCover': self.story.get_cover_storage_url(language),
             'name': self.get_name(language),
             'order': self.order,
-            'description': self.get_description(language),
-            'image': self.get_image_url_obj(language),
-            'ogTitle': self.get_og_title(language),
-            'ogDescription': self.get_og_description(language),
-            'ogImage' : self.get_og_image_url_obj(language),
             'language' : self.get_language(language),
-            'isShowAd': self.is_show_ad,
-            'author' : self.story.users[0].serialize_credit(),  # assume user[0] is author
-            'updatedAt': self.updated_at.isoformat(),
+            # 'isShowAd': self.is_show_ad,
             'sharingOption': self.sharing_option,
             'hasPreviewed': self.has_previewed,
             'hasPublished': self.has_published,
@@ -215,8 +221,6 @@ class Oice(Base, BaseMixin):
             'previewUrl': self.get_oice_preview_url(language),
             'shareUrl': self.get_share_url(language),
             'viewCount': self.view_count,
-            'hasLiked': user in self.story.liked_users,
-            'nextEpisode': self.get_next_episode(language),
         }
 
     def serialize_min(self, language=None):

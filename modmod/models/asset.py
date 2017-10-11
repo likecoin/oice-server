@@ -153,16 +153,6 @@ class AssetQuery:
                     .filter(Asset.id.in_(asset_ids)) \
                     .all()
 
-    @classmethod
-    def fetch_by_story(cls, story, session=DBSession):
-        library_id = [
-            library.id for library in story.libraries]
-        return session.query(Asset) \
-            .filter(Asset.library_id.in_(library_id)) \
-            .filter(Asset.is_deleted==false()) \
-            .order_by(Asset.order) \
-            .all()
-
     def count_by_library(self, library):
         library_id = library.id
         return self.count \
