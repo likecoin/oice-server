@@ -180,10 +180,13 @@ class Story(Base, BaseMixin):
         return self.og_image_url_obj
 
     def get_complementary_language(self, language):
+        returnVal = None
         if language[:2] == 'zh':
             # try to find supported Chinese language
-            return next((language for language in ['zh-HK', 'zh-TW', 'zh-CN'] if self.is_supported_language(language)), None)
-        return None
+            returnVal = next((language for language in ['zh-HK', 'zh-TW', 'zh-CN'] if self.is_supported_language(language)), None)
+        if returnVal is None and self.is_supported_language('en'): # attempt to fix issue #38
+            returnVal = 'en'
+        return returnVal
 
     @property
     def supported_languages(self):
