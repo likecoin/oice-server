@@ -31,10 +31,10 @@ RUN apk --no-cache --virtual .build-deps add \
   && pip install -r requirements.txt \
   && apk del .build-deps
 COPY ["CHANGES.txt", \
-  "example.ini", \
   "README.md", \
   "setup.py", \
   "/app/"]
+COPY *.ini /app/
 RUN python setup.py develop
 COPY . /app
-CMD [ "pserve", "example.ini" ]
+CMD pserve
