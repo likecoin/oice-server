@@ -1,0 +1,36 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/oice-server
+    docker:
+      - image: python:3-alpine
+    environment:
+      - CI: "true"
+    steps:
+      - run: apk add --no-cache curl git gzip tar
+      - checkout
+      - restore_cache:
+          key: oice-server-{{ checksum "requirements.txt" }}
+      - run:
+          name: Dependencies
+          command: |
+            apk --no-cache --virtual .build-deps add gcc musl-dev
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+      - save_cache:
+          key: oice-server-{{ checksum "requirements.txt" }}
+          paths:
+            - "venv"
+      - run:
+          name: Build
+          command: yarn run build
+      - run:
+          name: Start Test
+          command: pserve example.ini
+          background: true
+      - run:
+          name: Curl Test
+          command: |
+            sleep 5
+            curl --retry 10 --retry-delay 5 -v http://localhost:6543/
