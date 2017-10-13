@@ -627,18 +627,18 @@ paths:
     get:
       summary: Get app story list
       parameters:
-      - name: playing_id
+      - name: playingId
         in: query
         description: The playing story id
         required: false
         type: integer
         format: int32
-      - name: lang
+      - name: language
         in: query
         description: Language of the client
         required: false
         type: string
-      - name: before_time
+      - name: beforeTime
         in: query
         description: The time in unix timestamp format that filters stories by last update time before it
         required: false
@@ -669,6 +669,47 @@ paths:
                 items:
                   $ref: '#/definitions/StoryApp'
               localizedStories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryApp'
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryApp'
+  /v2/app/story:
+    get:
+      summary: Get app story list (ver. 2)
+      parameters:
+      - name: language
+        in: query
+        description: Language of the client
+        required: false
+        type: string
+      - name: beforeTime
+        in: query
+        description: The time in unix timestamp format that filters stories by last update time before it
+        required: false
+        type: integer
+        format: int64
+      - name: limit
+        in: query
+        description: The limit of the number stories returns
+        required: false
+        type: integer
+        format: int32
+      tags:
+      - App
+      - Story
+      responses:
+        200:
+          description: Story list
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              featuredStories:
                 type: array
                 items:
                   $ref: '#/definitions/StoryApp'
@@ -1204,6 +1245,8 @@ paths:
   /story/featured:
     get:
       summary: Get all featured stories
+      parameters:
+      - $ref: '#/parameters/language'
       tags:
       - Story
       responses:

@@ -85,7 +85,7 @@ from .featured_oice import (
 )
 
 from .featured_story import (
-    FeaturedStory,
+    FeaturedStory, FeaturedStoryQuery
 )
 
 from .tutorial_oice import (

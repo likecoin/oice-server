@@ -23,10 +23,12 @@ def normalize_language(language):
 
     return language
 
+
 def normalize_ui_language(language):
     if language == 'ja' or language[:2] == 'zh':
         return language
     return'en'
+
 
 def get_language_code_for_translate(language):
     language_code = language.lower()
