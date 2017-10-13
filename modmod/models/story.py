@@ -234,6 +234,7 @@ class Story(Base, BaseMixin):
             'description': self.get_description(language),
             'cover': self.get_cover_storage_url(language),
             'oiceUuid': self.oice[0].uuid if self.oice else '',
+            'language': language,
             'oiceCount': len(self.published_oices),
             'likeCount': len(self.liked_users),
             'shareUrl': self.oice[0].get_share_url(language) if self.oice else '',
