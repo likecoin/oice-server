@@ -231,6 +231,7 @@ class Oice(Base, BaseMixin):
             'name': self.get_name(language),
             'description': self.get_description(language),
             'image': self.get_image_url_obj(language).get('cover'),
+            'language': self.get_language(language),
         }
 
     def serialize_profile(self, language=None):
@@ -241,6 +242,7 @@ class Oice(Base, BaseMixin):
             'name': self.get_name(language),
             'description': self.get_description(language),
             'cover': self.get_image_url_obj(language).get('cover'),
+            'language': self.get_language(language),
         }
 
     @validates('filename')
