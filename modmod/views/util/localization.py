@@ -1,12 +1,14 @@
 import babel
 
+from ...config import get_default_lang
+
 
 def normalize_language(language):
-    language.replace('_', '-')
+    language = language.replace('_', '-')
     try:
         parts = babel.Locale.parse(language, sep='-')
     except babel.UnknownLocaleError:
-        parts = babel.Locale('en')
+        parts = babel.Locale(get_default_lang())
 
     language = parts.language
     script   = parts.script
@@ -23,13 +25,16 @@ def normalize_language(language):
 
     return language
 
+
 def normalize_ui_language(language):
     if language == 'ja' or language[:2] == 'zh':
         return language
-    return'en'
+    return get_default_lang()
+
 
 def get_language_code_for_translate(language):
     language_code = language.lower()
+
     # zh will be regarded as Simplified Chinese
     if language_code[:2] == 'zh' and ('hk' in language_code or 'tw' in language_code):
         language_code = 'zh-TW'

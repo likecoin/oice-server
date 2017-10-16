@@ -33,9 +33,9 @@ class Oice(Base, BaseMixin):
         sa.Integer, sa.ForeignKey('story.id'), nullable=False)
     order = sa.Column(sa.Integer, nullable=False)
     filename = sa.Column(sa.Unicode(1024), nullable=False, server_default="")
-    is_deleted = sa.Column(sa.Boolean, nullable=False, server_default=false())
+    is_deleted = sa.Column(sa.Boolean, nullable=False, index=True, server_default=false())
     is_show_ad = sa.Column(sa.Boolean, nullable=False, server_default=true())
-    language = sa.Column(sa.Unicode(5), nullable=False, server_default="zh-HK")
+    language = sa.Column(sa.Unicode(5), nullable=False, index=True, server_default="zh-HK")
     # Possible values of sharing_option
     # 0: Public
     # 1: Accessible by URL only
@@ -49,15 +49,19 @@ class Oice(Base, BaseMixin):
     fork_of = sa.Column(sa.Integer, nullable=True)
     view_count = sa.Column(sa.Integer, nullable=False, server_default="0")
 
-    blocks = relationship(
-        "Block",
-        order_by="Block.position")
+    blocks = relationship("Block",
+                          order_by="Block.position")
 
     localizations = relationship("OiceLocalization",
-                              collection_class=attribute_mapped_collection('language'),
-                              cascade="all,delete-orphan",
-                              backref="oice",
-                              lazy="joined")
+                                 collection_class=attribute_mapped_collection('language'),
+                                 cascade="all,delete-orphan",
+                                 backref="oice",
+                                 lazy="joined")
+
+    __table_args__ = (
+        sa.Index('oice_publicity_idx', 'sharing_option', 'state'),
+        sa.Index('oice_ordering_idx', 'id', 'order'),
+    )
 
     def __init__(self, *arg, **kw):
         super().__init__(*arg, **kw)

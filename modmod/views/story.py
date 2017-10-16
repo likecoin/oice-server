@@ -2,10 +2,8 @@ import json
 import datetime
 import os.path
 import uuid
-from pyramid.response import FileResponse
 import pyramid_safile
 import logging
-import transaction
 from pyramid.httpexceptions import HTTPForbidden
 from cornice import Service
 from modmod.exc import ValidationError
@@ -15,35 +13,35 @@ from sqlalchemy.orm.exc import NoResultFound
 from ..models import (
     DBSession,
     FeaturedStory,
-    LibraryQuery,
+    FeaturedStoryQuery,
     Oice,
     Story,
     StoryLocalization,
     StoryQuery,
     StoryFactory,
-    User,
     UserQuery,
     UserReadOiceProgress,
     UserReadOiceProgressQuery,
 )
 
 from . import check_is_language_valid
+from .util import normalize_language
+
+from ..config import (
+    get_oice_view_url,
+    get_oice_communication_url,
+    get_default_lang,
+)
 from ..operations.script_validator import ScriptValidator
 from ..operations.credit import get_story_credit
 from ..operations.image_handler import ComposeOgImage
-from ..config import get_oice_view_url, get_oice_preview_url, get_oice_communication_url
 from ..operations.worker import KSBuildWorker
 from ..operations.block import count_words_of_block
-
-log = logging.getLogger(__name__)
-
 from ..operations.story import (
     remove_story_localization,
     translate_story,
     translate_story_preview,
 )
-
-from .util import normalize_language
 
 
 log = logging.getLogger(__name__)
@@ -67,10 +65,10 @@ story_id = Service(name='story_id',
                    factory=StoryFactory,
                    traverse='/{story_id}')
 story_validate = Service(name='story_validate',
-                           path='story/{story_id}/validate',
-                           renderer='json',
-                           factory=StoryFactory,
-                           traverse='/{story_id}')
+                         path='story/{story_id}/validate',
+                         renderer='json',
+                         factory=StoryFactory,
+                         traverse='/{story_id}')
 story_credits = Service(name='story_credits',
                         path='credits/story/{story_id}',
                         renderer='json',
@@ -82,10 +80,10 @@ story_id_wordcount = Service(name='story_id_wordcount',
                              factory=StoryFactory,
                              traverse='/{story_id}')
 story_build = Service(name='story_build',
-                        path='story/{story_id}/build',
-                        renderer='json',
-                        factory=StoryFactory,
-                        traverse='/{story_id}')
+                      path='story/{story_id}/build',
+                      renderer='json',
+                      factory=StoryFactory,
+                      traverse='/{story_id}')
 story_like = Service(name='story_like',
                      path='story/{story_id}/like',
                      renderer='json',
@@ -97,6 +95,9 @@ story_featured = Service(name='story_featured',
 app_story = Service(name='app_story',
                     path='app/story',
                     renderer='json')
+app_story_v2 = Service(name='app_story_v2',
+                       path='v2/app/story',
+                       renderer='json')
 app_story_progress = Service(name='app_story_id_progress',
                              path='app/story/{story_id}/progress',
                              renderer='json',
@@ -304,6 +305,7 @@ def post_translate(request):
         'story': story.serialize(target_language),
     }
 
+
 @story_translate.get(permission='get')
 def get_translate(request):
     story = request.context
@@ -420,14 +422,21 @@ def like_story(request):
 
 @story_featured.get()
 def get_featured_stories(request):
-    featured_stories = DBSession.query(FeaturedStory) \
-                                .order_by(FeaturedStory.order) \
-                                .all()
+    user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
+
+    # If there is no featured story in client language return English story by default
+    client_language = normalize_language(request.GET.get('language', user.language if user else get_default_lang()))
+    has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
+    fs_language = client_language if has_fs_in_client_language else get_default_lang()
+
+    featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
+                                                    .order_by(FeaturedStory.order) \
+                                                    .all()
 
     return {
         'code': 200,
         'message': 'ok',
-        'stories': [fs.story.serialize_featured() for fs in featured_stories],
+        'stories': [fs.story.serialize_featured(language=fs_language) for fs in featured_stories],
     }
 
 
@@ -442,7 +451,7 @@ def get_app_story_list(request):
     is_english_reader = client_language[:2] == 'en'
 
     user_primary_languages = ['zh-HK', 'zh-TW', 'zh-CN'] if is_chinese_reader else [client_language]
-    user_secondary_languages = [] if is_english_reader else ['en']  # assume all people read English stories
+    user_secondary_languages = [] if is_english_reader else [get_default_lang()]
 
     user_languages = user_primary_languages + user_secondary_languages
     filtered_story_ids = set()
@@ -528,6 +537,57 @@ def get_app_story_list(request):
         'playingStory': playing_story.serialize_app(user, language=client_language) if playing_story else None,
         'featuredStories': [fs.story.serialize_app(user, language=client_language) for fs in featured_stories],
         'localizedStories': [ls.serialize_app(user, language=client_language) for ls in localized_stories],
+        'stories': [s.serialize_app(user, language=client_language) for s in stories],
+    }
+
+
+@app_story_v2.get()
+def get_app_story_list_v2(request):
+    user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
+
+    # If there is no featured story in client language return English story by default
+    client_language = normalize_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
+    has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
+    fs_language = client_language if has_fs_in_client_language else get_default_lang()
+
+    featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
+                                                    .order_by(FeaturedStory.tier, func.rand()) \
+                                                    .all()
+
+    # Filter the featured stories (if any) from the story list
+    filtered_story_ids = [fs.story_id for fs in featured_stories]
+
+    # Pagination
+    before_time = datetime.datetime.utcnow()
+    if 'before_time' in request.GET:
+        try:
+            timestamp = int(request.GET['before_time'])
+            before_time = datetime.datetime.fromtimestamp(timestamp)
+        except ValueError:
+            pass
+        except OverflowError:
+            pass
+
+    limit = request.GET.get('limit', 10)
+
+    stories = StoryQuery(DBSession).query \
+                                   .filter(Story.id.notin_(filtered_story_ids)) \
+                                   .filter(Story.updated_at < before_time) \
+                                   .filter(
+                                       or_(
+                                           Story.language == client_language,
+                                           Story.localizations.any(language=client_language)
+                                          )
+                                   ) \
+                                   .filter(Story.oice.any(state=2, sharing_option=0)) \
+                                   .order_by(Story.updated_at.desc()) \
+                                   .limit(limit) \
+                                   .all()
+
+    return {
+        'code': 200,
+        'message': 'ok',
+        'featuredStories': [fs.story.serialize_app(user, language=fs_language) for fs in featured_stories],
         'stories': [s.serialize_app(user, language=client_language) for s in stories],
     }
 

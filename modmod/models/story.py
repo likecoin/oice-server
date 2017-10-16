@@ -39,9 +39,9 @@ class Story(Base, BaseMixin):
                     'Oice.sharing_option == 0,'
                     'Oice.state == 2)',
     )
-    is_deleted = sa.Column(sa.Boolean, nullable=False, server_default=false())
+    is_deleted = sa.Column(sa.Boolean, nullable=False, index=True, server_default=false())
     description = sa.Column(sa.Unicode(4096), nullable=False, server_default="")
-    language = sa.Column(sa.Unicode(5), nullable=False, server_default="zh-HK")
+    language = sa.Column(sa.Unicode(5), nullable=False, index=True, server_default="zh-HK")
     cover_storage = sa.Column(FileHandleStore, nullable=True)
     title_logo = sa.Column(FileHandleStore, nullable=True)
     hero_image = sa.Column(FileHandleStore, nullable=True)
@@ -53,6 +53,11 @@ class Story(Base, BaseMixin):
                               cascade="all,delete-orphan",
                               backref="story",
                               lazy="joined")
+
+    __table_args__ = (
+        sa.Index('story_updated_at_idx', 'updated_at'),
+    )
+
     @property
     def __acl__(self):
         acl = super(Story, self).__acl__()
@@ -70,8 +75,8 @@ class Story(Base, BaseMixin):
         return self.fork_of == Story.get_sample_story_id()
 
     def is_supported_language(self, language):
-         return language is not None \
-                and language in self.localizations
+        return language is not None \
+               and language in self.localizations
 
     @property
     def cover_storage_url(self):
@@ -180,13 +185,18 @@ class Story(Base, BaseMixin):
         return self.og_image_url_obj
 
     def get_complementary_language(self, language):
-        returnVal = None
+        _language = None
+
         if language[:2] == 'zh':
             # try to find supported Chinese language
-            returnVal = next((language for language in ['zh-HK', 'zh-TW', 'zh-CN'] if self.is_supported_language(language)), None)
-        if returnVal is None and self.is_supported_language('en'): # attempt to fix issue #38
-            returnVal = 'en'
-        return returnVal
+            _language = next((
+                language for language in ['zh-HK', 'zh-TW', 'zh-CN']
+                if self.is_supported_language(language)), None)
+
+        if _language is None and self.is_supported_language('en'):  # attempt to fix issue #38
+            _language = 'en'
+
+        return _language
 
     @property
     def supported_languages(self):
@@ -226,8 +236,6 @@ class Story(Base, BaseMixin):
         }
 
     def serialize_app(self, user=None, language=None):
-        if not self.is_supported_language(language):
-            language = self.get_complementary_language(language)
         return {
             'id': self.id,
             'name': self.get_name(language),
