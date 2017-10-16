@@ -10,11 +10,14 @@ from ...models import (
 
 
 log = logging.getLogger(__name__)
+
 MAILCHIMP_SUBSCRIBE_URL = None
 
 
 def init_mailchimp(setting):
+    global MAILCHIMP_SUBSCRIBE_URL
     MAILCHIMP_SUBSCRIBE_URL = setting.get('mailchimp.subscribe.url', None)
+
 
 def construct_mailchimp_payload(user=None, **kwargs):
     fields = {}
