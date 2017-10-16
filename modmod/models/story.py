@@ -258,7 +258,7 @@ class Story(Base, BaseMixin):
             'cover': self.get_cover_storage_url(language),
             'titleLogo': self.title_logo_url,
             'heroImage': self.hero_image_url,
-            'oice': self.oice[0].serialize() if self.oice else None,
+            'oice': self.oice[0].serialize(language=language) if self.oice else None,
         }
 
 
