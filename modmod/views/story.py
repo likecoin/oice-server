@@ -43,6 +43,9 @@ from ..operations.story import (
     translate_story_preview,
 )
 
+from .util import normalize_language
+
+
 log = logging.getLogger(__name__)
 
 story_language = Service(name='story_language',
@@ -433,7 +436,7 @@ def get_app_story_list(request):
 
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
-    client_language = request.GET.get('language', user.language if user else '')
+    client_language = normalize_language(request.GET.get('language', user.language if user else ''))
 
     is_chinese_reader = client_language[:2] == 'zh'
     is_english_reader = client_language[:2] == 'en'
