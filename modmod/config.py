@@ -7,6 +7,7 @@ def includeme(config):
     global oice_url
     global oice_communication_url
     global o2_output_dir
+    global default_lang
     global upload_base_url
     global gcloud_bucket_id
     global gcloud_project_id
@@ -24,6 +25,8 @@ def includeme(config):
         config.get_settings().get('o2.oice_communication_url', None)
     o2_output_dir = \
         config.get_settings().get('o2.output_dir', None)
+    default_lang = \
+        config.get_settings().get('locale.default_lang', 'en')
     upload_base_url = \
         config.get_settings().get('oice.upload_base_url', None)
     gcloud_bucket_id = \
@@ -81,6 +84,12 @@ def get_o2_output_dir(oice_uuid):
         }
     else:
         return None
+
+
+def get_default_lang():
+    global default_lang
+    return default_lang
+
 
 def get_upload_base_url():
     global upload_base_url

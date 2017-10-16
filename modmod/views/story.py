@@ -27,7 +27,11 @@ from ..models import (
 from . import check_is_language_valid
 from .util import normalize_language
 
-from ..config import get_oice_view_url, get_oice_communication_url
+from ..config import (
+    get_oice_view_url,
+    get_oice_communication_url,
+    get_default_lang,
+)
 from ..operations.script_validator import ScriptValidator
 from ..operations.credit import get_story_credit
 from ..operations.image_handler import ComposeOgImage
@@ -421,9 +425,9 @@ def get_featured_stories(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
     # If there is no featured story in client language return English story by default
-    client_language = normalize_language(request.GET.get('language', user.language if user else 'en'))
+    client_language = normalize_language(request.GET.get('language', user.language if user else get_default_lang()))
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
-    fs_language = client_language if has_fs_in_client_language else 'en'
+    fs_language = client_language if has_fs_in_client_language else get_default_lang()
 
     featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
                                                     .order_by(FeaturedStory.order) \
@@ -447,7 +451,7 @@ def get_app_story_list(request):
     is_english_reader = client_language[:2] == 'en'
 
     user_primary_languages = ['zh-HK', 'zh-TW', 'zh-CN'] if is_chinese_reader else [client_language]
-    user_secondary_languages = [] if is_english_reader else ['en']  # assume all people read English stories
+    user_secondary_languages = [] if is_english_reader else [get_default_lang()]
 
     user_languages = user_primary_languages + user_secondary_languages
     filtered_story_ids = set()
@@ -542,9 +546,9 @@ def get_app_story_list_v2(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
     # If there is no featured story in client language return English story by default
-    client_language = normalize_language(request.GET.get('language', user.ui_language if user else 'en'))
+    client_language = normalize_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
-    fs_language = client_language if has_fs_in_client_language else 'en'
+    fs_language = client_language if has_fs_in_client_language else get_default_lang()
 
     featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
                                                     .order_by(FeaturedStory.tier, func.rand()) \
