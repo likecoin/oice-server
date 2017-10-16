@@ -409,7 +409,7 @@ OptionButton.prototype.clone = function() {
 
 OptionButton.prototype.importFromKAGArgs = function (args) {
     KAGButton.prototype.importFromKAGArgs.call(this, args);
-    this.text = decodeURI((args.text || "").replace(/!/g, '%')); // Decode text
+    this.text = decodeURIComponent((args.text || "").replace(/!/g, '%')); // Decode text
     this.oiceId = args.oiceid || 0;
     this.blockId = args.blockid || 0;
     this.index = args.index || 0;
