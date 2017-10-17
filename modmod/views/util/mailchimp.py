@@ -63,7 +63,8 @@ def construct_mailchimp_payload(user=None, **kwargs):
 
 
 def call_mailchimp_api(payload):
-    requests.post(MAILCHIMP_SUBSCRIBE_URL, json=payload)
+    if MAILCHIMP_SUBSCRIBE_URL:
+        requests.post(MAILCHIMP_SUBSCRIBE_URL, json=payload)
 
 
 def subscribe_mailchimp(google_token, user, **kwargs):

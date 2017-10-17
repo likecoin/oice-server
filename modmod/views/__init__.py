@@ -37,6 +37,7 @@ android_iap_validator_url = None
 ios_iap_validator_url = None
 iap_sub_price = None
 iap_sub_price_payout_ratio= None
+is_production = False
 
 
 def dict_get_value(_dict, keys_array, default_value=None):
@@ -57,6 +58,7 @@ def includeme(config):
     global ios_iap_validator_url
     global es_log_whitelist
     global es_log_key
+    global is_production
 
     intercom_secret_key = \
         config.get_settings().get('intercom.secret_key', None)
@@ -74,7 +76,7 @@ def includeme(config):
         config.get_settings().get('eslog.whitelist', None)
     es_log_whitelist = [path for path in es_log_whitelist_str.split(',')]
     es_log_key = config.get_settings().get('eslog.key', '')
-
+    is_production = config.get_settings().get('isProduction', '') == 'true'
 
 def get_intercom_secret_key():
     global intercom_secret_key
@@ -151,6 +153,9 @@ def get_es_log_key():
     global es_log_key
     return es_log_key
 
+def get_is_production():
+    global is_production
+    return is_production
 
 # function for setting general info in log
 def set_basic_info_library_log(library, log_dict=None):

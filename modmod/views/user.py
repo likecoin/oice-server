@@ -51,6 +51,7 @@ from .util import (
 )
 from . import (
     get_intercom_secret_key,
+    get_is_production,
     set_basic_info_user_log,
     set_basic_info_oice_source_log,
     set_basic_info_referrer_log,
@@ -106,12 +107,13 @@ def login_user(request):
     except ValueError:
         raise ValidationError('ERR_INVALID_AUTH_PARAM')
 
-    try:
-        auth.verify_id_token(firebase_token)
-    except ValueError:
-        raise ValidationError('ERR_FIREBASE_AUTH_ERROR')
-    except AppIdentityError:
-        raise ValidationError('ERR_INVALID_FIREBASE_TOKEN')
+    if get_is_production() or email != 'oice-dev':
+        try:
+            auth.verify_id_token(firebase_token)
+        except ValueError:
+            raise ValidationError('ERR_FIREBASE_AUTH_ERROR')
+        except AppIdentityError:
+            raise ValidationError('ERR_INVALID_FIREBASE_TOKEN')
 
     old_auth_id = authenticated_userid(request)
 
