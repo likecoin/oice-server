@@ -95,6 +95,9 @@ story_featured = Service(name='story_featured',
 app_story = Service(name='app_story',
                     path='app/story',
                     renderer='json')
+app_story_featured = Service(name='app_story_featured',
+                             path='app/story/featured',
+                             renderer='json')
 app_story_v2 = Service(name='app_story_v2',
                        path='v2/app/story',
                        renderer='json')
@@ -424,7 +427,7 @@ def like_story(request):
 def get_featured_stories(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
-    # If there is no featured story in client language return English story by default
+    # If there is no featured story in client language, return default language
     client_language = normalize_language(request.GET.get('language', user.language if user else get_default_lang()))
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
     fs_language = client_language if has_fs_in_client_language else get_default_lang()
@@ -541,11 +544,11 @@ def get_app_story_list(request):
     }
 
 
-@app_story_v2.get()
-def get_app_story_list_v2(request):
+@app_story_featured.get()
+def get_app_featured_story(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
-    # If there is no featured story in client language return English story by default
+    # If there is no featured story in client language, return story in default language
     client_language = normalize_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
     fs_language = client_language if has_fs_in_client_language else get_default_lang()
@@ -554,8 +557,21 @@ def get_app_story_list_v2(request):
                                                     .order_by(FeaturedStory.tier, func.rand()) \
                                                     .all()
 
-    # Filter the featured stories (if any) from the story list
-    filtered_story_ids = [fs.story_id for fs in featured_stories]
+    return {
+        'code': 200,
+        'message': 'ok',
+        'stories': [fs.story.serialize_app(user, language=fs_language) for fs in featured_stories],
+    }
+
+
+@app_story_v2.get()
+def get_app_story_list_v2(request):
+    user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
+
+    client_language = normalize_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
+
+    # Filter the stories (if any) from the story list
+    filtered_story_ids = set(request.GET.get('filter', '').split(','))
 
     # Pagination
     before_time = datetime.datetime.utcnow()
@@ -587,7 +603,6 @@ def get_app_story_list_v2(request):
     return {
         'code': 200,
         'message': 'ok',
-        'featuredStories': [fs.story.serialize_app(user, language=fs_language) for fs in featured_stories],
         'stories': [s.serialize_app(user, language=client_language) for s in stories],
     }
 
