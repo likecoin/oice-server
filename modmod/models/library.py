@@ -109,7 +109,7 @@ class Library(Base, BaseMixin):
             'cover': self.cover_storage_url,
         }
 
-    def serialize(self, user = None):
+    def serialize(self, user=None):
         serialized_library = self.serialize_min()
         serialized_library['description'] = self.description
         serialized_library['isCollaborator'] = user in self.users
@@ -127,18 +127,19 @@ class Library(Base, BaseMixin):
             'priority': self.priority,
         }
 
-    def serialize_store(self, user):
+    def serialize_store(self, user=None):
         serialized_store = self.serialize_min()
+        serialized_store['isCollaborator'] = user in self.users
         serialized_store['isPurchased'] = self.has_user_purchased(user)
         return serialized_store
 
-    def serialize_store_detail(self, user):
+    def serialize_store_detail(self, user=None):
         serialized_store = self.serialize_store(user)
         serialized_store['description'] = self.description
         serialized_store['createdAt'] = self.created_at.isoformat()
         serialized_store['updatedAt'] = self.updated_at.isoformat()
         serialized_store['launchedAt'] = self.launched_at.isoformat() if self.launched_at else None
-        serialized_store['author'] = self.users[0].serialize() if self.users else None #assume user[0] is author
+        serialized_store['author'] = self.users[0].serialize() if self.users else None  # Assume user[0] is the author
         serialized_store['credits'] = [u.serialize_credit() for u in self.get_assset_credits()]
         serialized_store['isSelected'] = self.has_user_selected(user)
         return serialized_store
