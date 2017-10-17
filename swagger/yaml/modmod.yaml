@@ -3736,6 +3736,8 @@ definitions:
         type: string
       license:
         type: integer
+      isCollaborator:
+        type: boolean
       author:
         $ref: '#/definitions/User'
       updatedAt:
