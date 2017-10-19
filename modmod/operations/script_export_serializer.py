@@ -102,6 +102,12 @@ class ScriptVisitor(object):
     def visit_label_block(self, block, language):
         attrs = block.get_localized_attributes(language)
 
+        # TODO: Temporal fix on missing character name after jump
+        # Reset scene
+        self.prev_character = None
+        self.prev_character_name = None
+        self.prev_message_block = None
+
         value = "*"
         if 'name' in attrs:
             value += attrs['name']
