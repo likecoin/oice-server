@@ -63,6 +63,7 @@ def construct_mailchimp_payload(user=None, **kwargs):
 
 
 def call_mailchimp_api(payload):
+    global MAILCHIMP_SUBSCRIBE_URL
     requests.post(MAILCHIMP_SUBSCRIBE_URL, json=payload)
 
 
