@@ -231,7 +231,10 @@ class ScriptVisitor(object):
 
         # Render character name if not the talking character
         if not is_hidden_dialog:
-            character_name = character.get_name(language)
+            # TODO:
+            # Since client is not ready for character localization,
+            # therefore we hardcode zh-HK for character name
+            character_name = character.get_name('zh-HK')
             if character.is_generic:
                 customized_name = attrs.get('name', None)
                 if customized_name:
