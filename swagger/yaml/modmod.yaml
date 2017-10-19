@@ -623,6 +623,47 @@ paths:
           description: You don\'t have permission to view this item
           schema:
             $ref: '#/definitions/ErrorNoPermission'
+  /story/featured:
+    get:
+      summary: Get all featured stories
+      parameters:
+      - $ref: '#/parameters/language'
+      tags:
+      - Story
+      responses:
+        200:
+          description: List of featured stories
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryFeatured'
+  /app/story/featured:
+    get:
+      summary: Get app featured story list
+      parameters:
+      - $ref: '#/parameters/language'
+      tags:
+      - App
+      - Story
+      responses:
+        200:
+          description: Featured story list
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryApp'
   /app/story:
     get:
       summary: Get app story list
@@ -685,12 +726,17 @@ paths:
         description: Language of the client
         required: false
         type: string
-      - name: beforeTime
+      - name: before_time
         in: query
         description: The time in unix timestamp format that filters stories by last update time before it
         required: false
         type: integer
         format: int64
+      - name: filter
+        in: query
+        description: The filtered stories ID separate by comma
+        required: false
+        type: string
       - name: limit
         in: query
         description: The limit of the number stories returns
@@ -709,10 +755,6 @@ paths:
                 type: integer
               message:
                 type: string
-              featuredStories:
-                type: array
-                items:
-                  $ref: '#/definitions/StoryApp'
               stories:
                 type: array
                 items:
@@ -1242,26 +1284,6 @@ paths:
           description: The item you are looking for cannot be found
           schema:
             $ref: '#/definitions/ErrorItemNotFound'
-  /story/featured:
-    get:
-      summary: Get all featured stories
-      parameters:
-      - $ref: '#/parameters/language'
-      tags:
-      - Story
-      responses:
-        200:
-          description: List of featured stories
-          schema:
-            properties:
-              code:
-                type: integer
-              message:
-                type: string
-              stories:
-                type: array
-                items:
-                  $ref: '#/definitions/StoryFeatured'
   /library:
     get:
       summary: Get libraries

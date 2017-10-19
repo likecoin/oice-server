@@ -4,10 +4,14 @@ from ...config import get_default_lang
 
 
 def normalize_language(language):
-    language = language.replace('_', '-')
+    if language:
+        language = language.replace('_', '-')
+    else:
+        language = ''
+
     try:
         parts = babel.Locale.parse(language, sep='-')
-    except babel.UnknownLocaleError:
+    except (babel.UnknownLocaleError, ValueError):
         parts = babel.Locale(get_default_lang())
 
     language = parts.language
