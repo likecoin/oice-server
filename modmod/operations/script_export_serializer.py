@@ -214,10 +214,6 @@ class ScriptVisitor(object):
         if character is None:
             return script
 
-        # Fade out any message layer
-        if self.prev_message_block and self.prev_message_block.macro.tagname == 'aside':
-            script += '@clearmessage\n'
-
         consecutive = self.prev_character and self.prev_character.id == character.id
 
         if not consecutive:
