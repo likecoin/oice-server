@@ -120,7 +120,7 @@ class ScriptVisitor(object):
     def visit_option_block(self, block, language):
         attrs = block.get_localized_attributes(language)
         question = attrs.get('question', '')
-        script = '@optionstart\n' + self._print_dialog_text(question) + '\n'
+        script = '@optionstart\n' + ScriptVisitor.print_dialog_text(question) + '\n'
 
         if 'answers' in attrs:
             try:
@@ -270,23 +270,28 @@ class ScriptVisitor(object):
                 script += '@ws buf=' + str(track) + ' canskip="true"\n'
         return script
 
-    def _print_dialog_text(self, dialog_text):
+    @staticmethod
+    def print_dialog_text(dialog_text):
         dialogs = dialog_text.strip().splitlines()
 
-        prev_dialog = None
         script = ''
-        for dialog in dialogs:
+        for line, dialog in enumerate(dialogs):
             if dialog:
-                if prev_dialog:
+                if line > 0:
                     script += "[r]\n"
+
+                # Handle special symobl of KAG
+                dialog = re.sub(r'([\t;@#&*%]+)',
+                                r'[o2_iscript]tf._specialChars = "\\1";[o2_endscript][ch text=&tf._specialChars]',
+                                dialog)
+
                 script += dialog
-            prev_dialog = dialog
 
         return script + "\n"
 
     def _print_dialog(self, dialog_text, full_screen=False):
         script = "@dialog fullscreen=%s\n" % ('true' if full_screen else 'false')
-        script += self._print_dialog_text(dialog_text)
+        script += ScriptVisitor.print_dialog_text(dialog_text)
         return script + "\n"
 
     def _display_character(self, position, character_scene):
