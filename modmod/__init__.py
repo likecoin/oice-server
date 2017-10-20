@@ -89,7 +89,7 @@ def main(global_config, **settings):
     
     stripe.api_key = settings['stripe.api_key'];
 
-    if not "CI" in os.environ:
+    if not "CI" in os.environ and os.path.isfile('secret/fbServiceAccountKey.json') :
         cred = credentials.Certificate('secret/fbServiceAccountKey.json')
         default_firebase_app = firebase_admin.initialize_app(cred)
 
