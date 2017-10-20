@@ -446,6 +446,7 @@ def stripe_generic_error(exc, request):
 def general_error(exc, request):
     code = 500
     message = str(exc)
+    request.response.status_code = code
     log_error_message(code, message, request)
     return {
         'code': code,
