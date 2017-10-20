@@ -1,6 +1,8 @@
 from datetime import datetime
+import io
 import json
 import os.path
+import uuid
 from pyramid.httpexceptions import HTTPFound
 import pyramid_safile
 from cornice import Service
@@ -22,6 +24,7 @@ from ..models import (
     UserQuery,
 )
 from ..operations import asset as operations
+from ..operations.worker import AudioFileWorker
 from ..operations.image_handler import ResizeBackgroundImage
 
 library_assets_typed = Service(name='library_assets_typed',
@@ -90,11 +93,14 @@ def list_asset(request):
         'assets': assets
     }
 
-def handle_audio_asset_file(extension, asset_file):
-    if extension.lower() in SUPPORT_AUDIO_FORMATS:
-        return operations.audio_transcodec(asset_file.filename, asset_file.file)
-    else:
+def validate_audio_format(extension):
+    if not extension.lower() in SUPPORT_AUDIO_FORMATS:
         raise ValidationError('ERR_AUDIO_FORMAT_UNSUPPORTED')
+
+def handle_audio_asset_file(job_id, asset, asset_file):
+    audio_bytes = io.BufferedReader(asset_file.file).read()
+    worker = AudioFileWorker(job_id, asset, audio_bytes)
+    worker.run()
 
 @library_assets_typed.post(permission='set')
 def add_asset(request):
@@ -125,8 +131,10 @@ def add_asset(request):
         # Set filename to <type><file extension>
         asset_file.filename = asset_types[0].type_ + file_extension
 
+        handle, job_id = None, None
         if asset_type == 'bgm' or asset_type == 'se':
-            handle = handle_audio_asset_file(file_extension, asset_file)
+            validate_audio_format(file_extension)
+            job_id = uuid.uuid4().hex
         else:
             factory = pyramid_safile.get_factory()
             handle = factory.create_handle(asset_file.filename, asset_file.file)
@@ -134,7 +142,7 @@ def add_asset(request):
                 bgImageHandler = ResizeBackgroundImage(handle.dst)
                 bgImageHandler.run()
 
-        asset = Asset.from_handle(handle,
+        asset = Asset.from_handle(handle=handle,
                                   asset_types=asset_types,
                                   name_tw=name_tw,
                                   name_en=name_en,
@@ -145,6 +153,7 @@ def add_asset(request):
                                   credits_url=credits_url)
         DBSession.add(asset)
         DBSession.flush()
+
         if 'characterId' in meta:
             character_id = meta['characterId']
             character = CharacterQuery(DBSession) \
@@ -163,13 +172,21 @@ def add_asset(request):
                 .get_last_order_in_library(library_id=library_id)
             asset.order = order
 
-        asset.library.updated_at = datetime.utcnow()
-        asset.library.launched_at = datetime.utcnow()
+
+        new_asset = asset.serialize()
+
+        if job_id:
+            new_asset['jobId'] = job_id
+            handle_audio_asset_file(job_id, asset, asset_file)
+        else:
+            # only update when success
+            asset.library.updated_at = datetime.utcnow()
+            asset.library.launched_at = datetime.utcnow()
 
         return {
             'code': 200,
             'message': 'ok',
-            'asset': asset.serialize()
+            'asset': new_asset
         }
     except ValueError as e:
         raise ValidationError(str(e))
@@ -185,6 +202,15 @@ def show_asset(request):
 
     return HTTPFound(location=asset.storage.url)
 
+
+@asset.get(permission='get')
+def get_asset(request):
+    asset = request.context
+    return {
+        'code': 200,
+        'message': 'ok',
+        'asset': asset.serialize(),
+    }
 
 @asset.post(permission='set')
 def update_asset(request):
@@ -209,6 +235,7 @@ def update_asset(request):
         if 'nameJp' in meta:
             asset.name_jp = meta['nameJp']
 
+        job_id = None
         if 'asset' in request.POST:
             asset_file = request.POST['asset']
 
@@ -219,7 +246,9 @@ def update_asset(request):
             asset.filename = asset_file.filename
 
             if asset.asset_types[0].type_ == 'audio':
-                handle = handle_audio_asset_file(file_extension, asset_file)
+                job_id = uuid.uuid4().hex
+                validate_audio_format(file_extension)
+                handle_audio_asset_file(job_id, asset, asset_file)
             else:
                 factory = pyramid_safile.get_factory()
                 handle = factory.create_handle(asset_file.filename, asset_file.file)
@@ -227,16 +256,20 @@ def update_asset(request):
                     bgImageHandler = ResizeBackgroundImage(handle.dst)
                     bgImageHandler.run()
 
-            asset.import_handle(handle)
+                asset.import_handle(handle)
 
             DBSession.add(asset)
 
-        asset.library.updated_at = datetime.utcnow()
+        updated_asset = asset.serialize()
+        if job_id:
+            updated_asset['jobId'] = job_id
+        else:
+            asset.library.updated_at = datetime.utcnow()
 
         return {
             'code': 200,
             'message': 'ok',
-            'asset': asset.serialize(),
+            'asset': updated_asset,
         }
     except ValueError as e:
         raise ValidationError(str(e))

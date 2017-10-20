@@ -3,6 +3,7 @@ from ..models import (
     Asset,
 )
 import transaction
+import io
 import logging
 import os
 import subprocess
@@ -100,7 +101,8 @@ def delete_asset(session, asset):
     asset.is_deleted = True
 
 
-def audio_transcodec(original_filename, fp):
+def audio_transcodec(original_filename, audio_bytes):
+    fp = io.BufferedRandom(io.BytesIO(audio_bytes))
     filename = os.path.splitext(original_filename)[0]
     tempdir = tempfile.mkdtemp()
     temp_zip = os.path.join(tempfile.mkdtemp(), filename + '.zip')

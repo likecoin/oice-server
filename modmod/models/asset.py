@@ -3,7 +3,7 @@ import os
 import sqlalchemy as sa
 from sqlalchemy import func
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.expression import true, false
+from sqlalchemy.sql.expression import true, false, null
 from pyramid.security import Allow
 from pyramid_safile import FileHandleStore
 
@@ -31,9 +31,9 @@ class Asset(Base, BaseMixin):
     name_en = sa.Column(sa.Unicode(1024), nullable=False)
     name_jp = sa.Column(sa.Unicode(1024), nullable=False)
     filename = sa.Column(sa.Unicode(1024), nullable=True)
-    storage = sa.Column(FileHandleStore, nullable=False)
+    storage = sa.Column(FileHandleStore, nullable=True)
     credits_url = sa.Column(sa.Unicode(1024), nullable=False, server_default='')
-    content_type = sa.Column(sa.Unicode(1024), nullable=False, server_default="")
+    content_type = sa.Column(sa.Unicode(1024), nullable=True)
     order = sa.Column(sa.Integer, nullable=False, server_default='0')
     library_id = sa.Column(
         sa.Integer, sa.ForeignKey('library.id'), nullable=False)
@@ -57,7 +57,7 @@ class Asset(Base, BaseMixin):
             'libraryId': self.library_id,
             'types': [type_.serialize() for type_ in self.asset_types],
             'contentType': self.content_type,
-            'url': self.storage.url,
+            'url': self.url(),
             'order': self.order,
             'users': [user.serialize() for user in self.users] if self.users else None,
             'creditsUrl': self.credits_url,
@@ -72,7 +72,7 @@ class Asset(Base, BaseMixin):
         return acl
 
     def url(self):
-        return self.storage.url
+        return self.storage.url if self.storage else None
 
     @property
     def extension(self):
@@ -92,9 +92,13 @@ class Asset(Base, BaseMixin):
         return extension
 
     @classmethod
-    def from_handle(cls, handle, asset_types=[], name_tw="", name_en="", name_jp="", library_id=None,
-                    filename=None, users=[], credits_url=''):
-        self = cls(name_tw=name_tw, name_en=name_en, name_jp=name_jp, filename=filename)
+    def from_handle(cls, handle=None, asset_types=[], name_tw="", name_en="", name_jp="", library_id=None,
+                    filename=None, users=[], credits_url='', order=0):
+        self = cls(name_tw=name_tw,
+                   name_en=name_en,
+                   name_jp=name_jp,
+                   filename=filename,
+                   order=order)
         self.import_handle(handle)
         self.asset_types = asset_types
         self.library_id = library_id
@@ -112,11 +116,11 @@ class Asset(Base, BaseMixin):
         return self.export_filename + self.extension
 
     def import_handle(self, handle):
-        self.storage = handle
-        self.content_type = mimetypes.guess_type(handle.filename,
-                                                 strict=False)[0]
-        if self.content_type is None:
-            self.content_type = 'application/octet-stream'
+        if handle:
+            self.storage = handle
+            self.content_type = mimetypes.guess_type(handle.filename, strict=False)[0]
+            if self.content_type is None:
+                self.content_type = 'application/octet-stream'
 
 class AssetFactory(object):
 

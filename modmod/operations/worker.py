@@ -15,7 +15,9 @@ import pyramid_safile
 import transaction
 import json
 from ..models import (
+    Asset,
     AssetQuery,
+    AssetType,
     Block,
     DBSession,
     CharacterQuery,
@@ -25,6 +27,7 @@ from ..models import (
     ProjectExport,
     UserQuery,
 )
+from .asset import audio_transcodec
 from .block import ensure_block_default_value, update_block_attributes
 from .script_exporter import ScriptExporter, KSScriptBuilder
 from .script_import_parser import parse_script, ScriptImportParserError
@@ -420,6 +423,74 @@ class ImportOiceWorker(object):
                 self.oice,
                 self.script_file,
                 self.language,
+            ),
+            timeout=600
+        )
+
+def transcode_audio_asset(_settings, _safile_settings, job_id, asset, asset_file):
+    pyramid_safile.init_factory(_safile_settings)
+
+    engine = engine_from_config(_settings)
+    DBSession.configure(bind=engine)
+
+    socket_url = 'audio/convert/' + job_id
+
+    try:
+        asset = AssetQuery(DBSession).get_by_id(asset.id)
+        handle = audio_transcodec(asset.filename, asset_file)
+
+        asset.import_handle(handle)
+
+        DBSession.add(asset)
+        DBSession.flush()
+
+        library = LibraryQuery(DBSession).get_library_by_id(asset.library_id)
+        library.updated_at = datetime.utcnow()
+        library.launched_at = datetime.utcnow()
+
+        asset_id = asset.id
+    except Exception as error:
+        send_result_request(socket_url, {
+            'error': True,
+            'key': 'ERR_AUDIO_IMPORT_ERROR',
+            'interpolation': {
+                'message': str(error),
+            },
+        })
+        if not asset.storage:
+            asset.is_deleted = True
+            transaction.commit()
+    else:
+        transaction.commit()
+        send_result_request(socket_url, {
+            'stage': 'finished',
+            'assetId': asset_id,
+        })
+
+class AudioFileWorker(object):
+
+    def __init__(self, job_id, asset, asset_file):
+        super().__init__()
+        self.job_id = job_id
+        self.asset = asset
+        self.asset_file = asset_file
+
+    def run(self):
+        redis = Redis(
+            settings["redis.host"],
+            settings["redis.port"],
+            password=settings["redis.password"],
+        )
+        use_connection(redis)
+
+        result = Queue().enqueue(
+            transcode_audio_asset,
+            args=(
+                settings,
+                safile_settings,
+                self.job_id,
+                self.asset,
+                self.asset_file,
             ),
             timeout=600
         )
