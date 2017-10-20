@@ -50,12 +50,22 @@ class ScriptVisitor(object):
             if attr.attribute_definition.attribute_name in script_export_default.SCALABLE_ATTRIBUTES:
                 if attr.value:
                     attr.value = int(float(attr.value) * self.scale_factor)
+
+            if block.macro.tagname in script_export_default.FADING_AUDIO_MACROS \
+                    and attr.attribute_definition.attribute_name == 'time' \
+                    and attr.value < 1:
+                # Fading time cannot less than 1
+                attr.value = 1
+
             if attr.attribute_definition.asset_type == 'reference':
                 if attr.attribute_definition.attribute_name == 'rule' or not attr.asset_id:
                     continue
+
             elif not attr.value:
                 continue
+
             script += ' ' + attr.accept(self, language)
+
         return script + '\n'
 
     def visit_autoplay_block(self, block, language):

@@ -155,6 +155,18 @@ SCALABLE_ATTRIBUTES = [
 ]
 
 
+FADING_AUDIO_MACROS = set([
+    'fadebgm',
+    'fadeinbgm',
+    'fadeinse',
+    'fadeoutse',
+    'fadeoutbgm',
+    'fadeoutse',
+    'fadepausebgm',
+    'fadese',
+])
+
+
 OVERRIDABLE_CHARACTER_CONFIG_ITEMS = [
     "edgecolor",
     "xl",  "xm",  "xr",
