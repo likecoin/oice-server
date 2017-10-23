@@ -91,6 +91,8 @@ def translate_oice(oice, target_language, source_language=None, oice_name=None, 
                     attrs[name] = json.dumps(answers, ensure_ascii=False)
                 except (AttributeError, KeyError, ValueError):
                     pass
+            elif b.macro.tagname == 'characterdialog' and name == 'name':
+                continue
             else:
                 attr_list.append((attrs, name))
                 text_list.append(value)

@@ -152,9 +152,7 @@ def add_story(request):
 
         story_name = '{} {}'.format(story_name, len(user.stories) + 1)
 
-        story = Story.create(DBSession, name=story_name)
-
-        story.language = user.language
+        story = Story(name=story_name, language=user.language)
 
         user.stories.append(story)
 
