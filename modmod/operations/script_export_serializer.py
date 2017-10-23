@@ -53,7 +53,7 @@ class ScriptVisitor(object):
 
             if block.macro.tagname in script_export_default.FADING_AUDIO_MACROS \
                     and attr.attribute_definition.attribute_name == 'time' \
-                    and attr.value < 1:
+                    and int(attr.value) < 1:
                 # Fading time cannot less than 1
                 attr.value = 1
 
