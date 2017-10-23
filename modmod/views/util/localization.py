@@ -24,7 +24,7 @@ def normalize_language(language):
             if script == 'Hans':
                 region = 'CN'
             else:
-                region = 'TW'
+                region = 'HK'
         language += '-' + region
 
     return language
