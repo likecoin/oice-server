@@ -7,7 +7,7 @@ import logging
 from pyramid.httpexceptions import HTTPForbidden
 from cornice import Service
 from modmod.exc import ValidationError
-from sqlalchemy import func, or_, case
+from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
 
 from ..models import (
@@ -25,7 +25,7 @@ from ..models import (
 )
 
 from . import check_is_language_valid
-from .util import normalize_language
+from .util import normalize_story_language
 
 from ..config import (
     get_oice_view_url,
@@ -426,7 +426,7 @@ def get_featured_stories(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
     # If there is no featured story in client language, return default language
-    client_language = normalize_language(request.GET.get('language', user.language if user else get_default_lang()))
+    client_language = normalize_story_language(request.GET.get('language', user.language if user else get_default_lang()))
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
     fs_language = client_language if has_fs_in_client_language else get_default_lang()
 
@@ -445,7 +445,7 @@ def get_featured_stories(request):
 def get_app_story_list(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
-    client_language = normalize_language(request.GET.get('language', user.language if user else ''))
+    client_language = normalize_story_language(request.GET.get('language', user.language if user else ''))
 
     filtered_story_ids = set()
 
@@ -480,19 +480,10 @@ def get_app_story_list(request):
 
     limit = request.GET.get('limit', 10)
 
-    stories = StoryQuery(DBSession).query \
-                                   .filter(Story.id.notin_(filtered_story_ids)) \
-                                   .filter(Story.updated_at < before_time) \
-                                   .filter(
-                                       or_(
-                                           Story.language == client_language,
-                                           Story.localizations.any(language=client_language)
-                                       )
-                                   ) \
-                                   .filter(Story.oice.any(state=2, sharing_option=0)) \
-                                   .order_by(Story.updated_at.desc()) \
-                                   .limit(limit) \
-                                   .all()
+    stories = StoryQuery(DBSession).get_stories_by_language(language=client_language,
+                                                            filtered_ids=filtered_story_ids,
+                                                            before_time=before_time,
+                                                            limit=limit)
 
     return {
         'code': 200,
@@ -509,7 +500,7 @@ def get_app_featured_story(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
     # If there is no featured story in client language, return story in default language
-    client_language = normalize_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
+    client_language = normalize_story_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
     fs_language = client_language if has_fs_in_client_language else get_default_lang()
 
@@ -528,7 +519,7 @@ def get_app_featured_story(request):
 def get_app_story_list_v2(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
-    client_language = normalize_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
+    client_language = normalize_story_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
 
     # Filter the stories (if any) from the story list
     filtered_story_ids = set(request.GET.get('filter', '').split(','))
@@ -546,19 +537,10 @@ def get_app_story_list_v2(request):
 
     limit = request.GET.get('limit', 10)
 
-    stories = StoryQuery(DBSession).query \
-                                   .filter(Story.id.notin_(filtered_story_ids)) \
-                                   .filter(Story.updated_at < before_time) \
-                                   .filter(
-                                       or_(
-                                           Story.language == client_language,
-                                           Story.localizations.any(language=client_language)
-                                          )
-                                   ) \
-                                   .filter(Story.oice.any(state=2, sharing_option=0)) \
-                                   .order_by(Story.updated_at.desc()) \
-                                   .limit(limit) \
-                                   .all()
+    stories = StoryQuery(DBSession).get_stories_by_language(language=client_language,
+                                                            filtered_ids=filtered_story_ids,
+                                                            before_time=before_time,
+                                                            limit=limit)
 
     return {
         'code': 200,

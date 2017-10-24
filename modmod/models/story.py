@@ -1,8 +1,10 @@
 import os
 import sqlalchemy as sa
+from sqlalchemy import or_
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.sql.expression import true, false
+
 from pyramid.security import Allow
 from pyramid_safile import FileHandleStore
 from ..config import get_upload_base_url
@@ -74,7 +76,7 @@ class Story(Base, BaseMixin):
     def is_fork_from_sample_story(self):
         return self.fork_of == Story.get_sample_story_id()
 
-    def is_supported_language(self, language):
+    def has_translated_language(self, language):
         return language is not None \
                and language in self.localizations
 
@@ -102,7 +104,7 @@ class Story(Base, BaseMixin):
     def import_handle(self, handle, language=None):
         if language == self.language or language is None:
             self.cover_storage = handle
-        elif self.is_supported_language(language):
+        elif self.has_translated_language(language):
             self.localizations[language].import_handle(handle)
 
     def import_title_logo_handle(self, handle):
@@ -135,13 +137,13 @@ class Story(Base, BaseMixin):
     def import_og_image_handle(self, handle, language=None):
         if language == self.language or language is None:
             self.og_image = handle
-        elif self.is_supported_language(language):
+        elif self.has_translated_language(language):
             self.localizations[language].import_og_image_handle(handle)
 
     def set_name(self, name, language=None):
         if language == self.language or language is None:
             self.name = name
-        elif self.is_supported_language(language):
+        elif self.has_translated_language(language):
             self.localizations[language].name=name
         else :
             localization = StoryLocalization(story=self, language=language, name=name)
@@ -149,38 +151,38 @@ class Story(Base, BaseMixin):
             self.localizations[language] = localization
 
     def get_name(self, language=None):
-        if self.is_supported_language(language):
+        if self.has_translated_language(language):
             return self.localizations[language].name
         return self.name
 
     def set_description(self, description, language=None):
         if language == self.language or language is None:
             self.description = description
-        elif self.is_supported_language(language):
+        elif self.has_translated_language(language):
             self.localizations[language].description=description
 
     def get_description(self, language=None):
-        if self.is_supported_language(language):
+        if self.has_translated_language(language):
             return self.localizations[language].description
         return self.description
 
     def get_language(self, language=None):
-        if self.is_supported_language(language):
+        if self.has_translated_language(language):
             return language
         return self.language
 
     def get_cover_storage_url(self, language=None):
-        if self.is_supported_language(language):
+        if self.has_translated_language(language):
             return self.localizations[language].cover_storage_url
         return self.cover_storage_url
 
     def get_cover_url_obj(self, language):
-        if self.is_supported_language(language):
+        if self.has_translated_language(language):
             return self.localizations[language].cover_url_obj
         return self.cover_url_obj
 
     def get_og_image_url_obj(self, language):
-        if self.is_supported_language(language):
+        if self.has_translated_language(language):
             return self.localizations[language].og_image_url_obj
         return self.og_image_url_obj
 
@@ -188,12 +190,10 @@ class Story(Base, BaseMixin):
         _language = None
 
         if language[:2] == 'zh':
-            # try to find supported Chinese language
-            _language = next((
-                language for language in ['zh-HK', 'zh-TW', 'zh-CN']
-                if self.is_supported_language(language)), None)
+            # Try to find supported Chinese language
+            _language = next((lang for lang in ['zh-HK', 'zh-TW', 'zh-CN'] if self.is_supported_language(lang)), None)
 
-        if _language is None and self.is_supported_language('en'):  # attempt to fix issue #38
+        if _language is None and self.is_supported_language('en'):
             _language = 'en'
 
         return _language
@@ -203,6 +203,9 @@ class Story(Base, BaseMixin):
         languages = [k for k in self.localizations.keys()]
         languages.append(self.language)
         return languages
+
+    def is_supported_language(self, language):
+        return language in self.supported_languages
 
     def serialize(self, language=None):
         return {
@@ -242,7 +245,7 @@ class Story(Base, BaseMixin):
             'description': self.get_description(language),
             'cover': self.get_cover_storage_url(language),
             'oiceUuid': self.oice[0].uuid if self.oice else '',
-            'language': language,
+            'language': self.get_complementary_language(language),
             'oiceCount': len(self.published_oices),
             'likeCount': len(self.liked_users),
             'shareUrl': self.oice[0].get_share_url(language) if self.oice else '',
@@ -293,3 +296,25 @@ class StoryQuery:
 
     def get_sample_story(self):
         return self.get_story_by_id(Story.get_sample_story_id())
+
+    def get_stories_by_language(self, language=None, filtered_ids=None, before_time=None, limit=10):
+        query = self.query
+
+        if filtered_ids:
+            query = query.filter(Story.id.notin_(filtered_ids))
+
+        if before_time:
+            query = query.filter(Story.updated_at < before_time)
+
+        if language:
+            query = query.filter(
+                        or_(
+                            Story.language.like(language + '%'),
+                            Story.localizations.any(StoryLocalization.language.like(language + '%'))
+                        )
+                    )
+
+        return query.filter(Story.oice.any(state=2, sharing_option=0)) \
+                    .order_by(Story.updated_at.desc()) \
+                    .limit(limit) \
+                    .all()

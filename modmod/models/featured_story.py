@@ -31,8 +31,8 @@ class FeaturedStoryQuery:
         return bool(self.session.execute('''
                                          SELECT 1
                                          FROM `featured_story`
-                                         WHERE `language` = "%s"''' % language
+                                         WHERE `language` LIKE "%s%%"''' % language
                                          ).scalar())
 
     def fetch_by_language(self, language):
-        return self.query.filter(FeaturedStory.language == language)
+        return self.query.filter(FeaturedStory.language.like(language + '%'))
