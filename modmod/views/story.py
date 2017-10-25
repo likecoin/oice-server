@@ -621,7 +621,7 @@ def get_app_story_progress(request):
     already_read_oice_ids = set(p.oice_id for p in progress)
 
     try:
-        oice = next(o for o in story.oice if o.id not in already_read_oice_ids)
+        oice = next(o for o in story.oice if o.id not in already_read_oice_ids and o.is_public() and o.has_published)
     except StopIteration:
         # Return last viewed oice if all oices have read and the last viewed oice is not the last episode
         # otherwise, return the first episode of the story instead
