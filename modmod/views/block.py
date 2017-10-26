@@ -138,12 +138,13 @@ def update_blocks(request):
                     })
             log_blocks.append(log_block)
 
-    log_dict = {
-        'action': 'updateBlock',
-        'blocks': log_blocks,
-    }
-    log_dict = set_basic_info_log(request, log_dict)
-    log_block_message(log_dict, request.authenticated_userid, oice)
+    if log_blocks:
+        log_dict = {
+            'action': 'updateBlock',
+            'blocks': log_blocks,
+        }
+        log_dict = set_basic_info_log(request, log_dict)
+        log_block_message(log_dict, request.authenticated_userid, oice)
 
     return {
         "message": "Update Changed Blocks Succeed",
