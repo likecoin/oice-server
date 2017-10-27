@@ -121,7 +121,7 @@ def audio_transcodec(original_filename, audio_bytes):
         handle = factory.create_handle(os.path.basename(temp_zip), open(temp_zip, 'rb'))
         os.remove(temp_zip)
     except FileNotFoundError:
-        raise ValidationError('ERR_AUDIO_TRANSCODE_FAILURE')
+        return None
     else:
         subprocess.call(['unzip', '-o', handle.dst, '-d', os.path.dirname(handle.dst)])
     finally:

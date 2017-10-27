@@ -97,100 +97,126 @@ def validate_audio_format(extension):
     if not extension.lower() in SUPPORT_AUDIO_FORMATS:
         raise ValidationError('ERR_AUDIO_FORMAT_UNSUPPORTED')
 
-def handle_audio_asset_file(job_id, asset, asset_file):
-    audio_bytes = io.BufferedReader(asset_file.file).read()
-    worker = AudioFileWorker(job_id, asset, audio_bytes)
+def handle_audio_asset_files(job_id, assets, asset_files):
+    audio_bytes_list = [io.BufferedReader(f.file).read() for f in asset_files]
+    worker = AudioFileWorker(job_id, assets, audio_bytes_list)
     worker.run()
+
+def create_asset(asset_types, asset_type, meta, asset_file, library_id, user_email, order):
+    credits_url = meta.get('creditsUrl')
+
+    if 'credits' in meta:
+        users = UserQuery(DBSession).fetch_user_by_ids(user_ids=meta['credits'])
+    else:
+        users = [UserQuery(DBSession).fetch_user_by_email(email=user_email).one()]
+
+    # Set name_en as default
+    name_en = meta['nameEn'] if 'nameEn' in meta else None
+    name_tw = meta['nameTw'] if 'nameTw' in meta else name_en
+    name_jp = meta['nameJp'] if 'nameJp' in meta else name_en
+
+    file_extension = os.path.splitext(asset_file.filename)[1].lower()
+    # Set filename to <type><file extension>
+    asset_file.filename = asset_types[0].type_ + file_extension
+
+    handle = None
+    if asset_type == 'bgm' or asset_type == 'se':
+        validate_audio_format(file_extension)
+    else:
+        factory = pyramid_safile.get_factory()
+        handle = factory.create_handle(asset_file.filename, asset_file.file)
+        if asset_type == 'bgimage':
+            bgImageHandler = ResizeBackgroundImage(handle.dst)
+            bgImageHandler.run()
+
+    asset = Asset.from_handle(handle=handle,
+                              asset_types=asset_types,
+                              name_tw=name_tw,
+                              name_en=name_en,
+                              name_jp=name_jp,
+                              library_id=library_id,
+                              filename=asset_file.filename,
+                              users=users,
+                              credits_url=credits_url,
+                              order=order)
+
+    return asset
 
 @library_assets_typed.post(permission='set')
 def add_asset(request):
-    library_id = request.matchdict['library_id']
     asset_type = request.matchdict['asset_type']
+    library_id = request.context.id
+    user_email = request.authenticated_userid
 
     try:
-        asset_file = request.POST['asset']
-        meta = json.loads(request.POST['meta'])
-
         asset_types = DBSession.query(AssetType) \
                                .filter(AssetType.folder_name == asset_type) \
                                .all()
 
-        credits_url = meta.get('creditsUrl')
+        meta = json.loads(request.POST['meta'])
+        asset_file = request.POST['asset'] if 'asset' in request.POST \
+                        else [request.POST['asset' + str(index)] for index in range(len(meta))]
+        asset_category = asset_types[0].type_
 
-        if 'credits' in meta:
-            users = UserQuery(DBSession).fetch_user_by_ids(user_ids=meta['credits'])
+        if asset_category == 'audio':
+            # only audio assets support multiple upload at this point
+            return add_assets(asset_types, asset_type, meta, asset_file, library_id, user_email)
         else:
-            users = [UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()]
+            order = 0
+            if 'order' in meta:
+                order = int(meta['order']) - 1
+                parent_asset = DBSession.query(Asset) \
+                                        .filter(Asset.order == order) \
+                                        .filter(Asset.library_id == library_id) \
+                                        .first() if order else None
+                operations.insert_asset(DBSession, asset, parent_asset)
+            else:
+                order = AssetQuery(DBSession) \
+                    .get_last_order_in_library(library_id=library_id)
 
-        # Set name_en as default
-        name_en = meta['nameEn'] if 'nameEn' in meta else None
-        name_tw = meta['nameTw'] if 'nameTw' in meta else name_en
-        name_jp = meta['nameJp'] if 'nameJp' in meta else name_en
+            asset = create_asset(asset_types, asset_type, meta, asset_file, library_id, user_email, order)
+            DBSession.add(asset)
+            DBSession.flush()
 
-        file_extension = os.path.splitext(asset_file.filename)[1].lower()
-        # Set filename to <type><file extension>
-        asset_file.filename = asset_types[0].type_ + file_extension
+            if 'characterId' in meta:
+                character_id = meta['characterId']
+                character = CharacterQuery(DBSession) \
+                    .fetch_character_by_id(character_id=character_id).one()
+                character.fgimages.append(asset)
 
-        handle, job_id = None, None
-        if asset_type == 'bgm' or asset_type == 'se':
-            validate_audio_format(file_extension)
-            job_id = uuid.uuid4().hex
-        else:
-            factory = pyramid_safile.get_factory()
-            handle = factory.create_handle(asset_file.filename, asset_file.file)
-            if asset_type == 'bgimage':
-                bgImageHandler = ResizeBackgroundImage(handle.dst)
-                bgImageHandler.run()
-
-        asset = Asset.from_handle(handle=handle,
-                                  asset_types=asset_types,
-                                  name_tw=name_tw,
-                                  name_en=name_en,
-                                  name_jp=name_jp,
-                                  library_id=library_id,
-                                  filename=asset_file.filename,
-                                  users=users,
-                                  credits_url=credits_url)
-        DBSession.add(asset)
-        DBSession.flush()
-
-        if 'characterId' in meta:
-            character_id = meta['characterId']
-            character = CharacterQuery(DBSession) \
-                .fetch_character_by_id(character_id=character_id).one()
-            character.fgimages.append(asset)
-
-        if 'order' in meta:
-            order = int(meta['order']) - 1
-            parent_asset = DBSession.query(Asset) \
-                                    .filter(Asset.order == order) \
-                                    .filter(Asset.library_id == library_id) \
-                                    .first() if order else None
-            operations.insert_asset(DBSession, asset, parent_asset)
-        else:
-            order = AssetQuery(DBSession) \
-                .get_last_order_in_library(library_id=library_id)
-            asset.order = order
-
-
-        new_asset = asset.serialize()
-
-        if job_id:
-            new_asset['jobId'] = job_id
-            handle_audio_asset_file(job_id, asset, asset_file)
-        else:
-            # only update when success
             asset.library.updated_at = datetime.utcnow()
             asset.library.launched_at = datetime.utcnow()
 
-        return {
-            'code': 200,
-            'message': 'ok',
-            'asset': new_asset
-        }
+            return {
+                'code': 200,
+                'message': 'ok',
+                'asset': asset.serialize(),
+            }
     except ValueError as e:
         raise ValidationError(str(e))
 
+def add_assets(asset_types, asset_type, metas, asset_files, library_id, user_email):
+    assets = []
+    job_id = uuid.uuid4().hex
+
+    order = AssetQuery(DBSession) \
+        .get_last_order_in_library(library_id=library_id)
+
+    for index, (asset_file, meta) in enumerate(zip(asset_files, metas)):
+        new_order = order + index
+        asset = create_asset(asset_types, asset_type, meta, asset_file, library_id, user_email, new_order)
+        assets.append(asset)
+
+    DBSession.flush()
+
+    handle_audio_asset_files(job_id, assets, asset_files)
+
+    return {
+        'code': 200,
+        'message': 'ok',
+        'assets': [a.serialize() for a in assets],
+        'jobId': job_id,
+    }
 
 @asset_download.get(permission='get')
 def show_asset(request):
@@ -248,7 +274,7 @@ def update_asset(request):
             if asset.asset_types[0].type_ == 'audio':
                 job_id = uuid.uuid4().hex
                 validate_audio_format(file_extension)
-                handle_audio_asset_file(job_id, asset, asset_file)
+                handle_audio_asset_files(job_id, [asset], [asset_file])
             else:
                 factory = pyramid_safile.get_factory()
                 handle = factory.create_handle(asset_file.filename, asset_file.file)

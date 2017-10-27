@@ -168,7 +168,8 @@ class AssetQuery:
         library_id = library.id
         return session.query(Asset) \
             .filter(Asset.library_id == library_id) \
-            .filter(Asset.is_deleted==false()) \
+            .filter(Asset.is_deleted == false()) \
+            .filter(Asset.storage != null()) \
             .order_by(Asset.order) \
             .all()
 
@@ -178,5 +179,4 @@ class AssetQuery:
                     .order_by(Asset.order.desc()) \
                     .first()
 
-        return asset.order + 1
-
+        return asset.order + 1 if asset else 1

@@ -427,7 +427,7 @@ class ImportOiceWorker(object):
             timeout=600
         )
 
-def transcode_audio_asset(_settings, _safile_settings, job_id, asset, asset_file):
+def transcode_audio_assets(_settings, _safile_settings, job_id, assets, asset_files):
     pyramid_safile.init_factory(_safile_settings)
 
     engine = engine_from_config(_settings)
@@ -436,19 +436,35 @@ def transcode_audio_asset(_settings, _safile_settings, job_id, asset, asset_file
     socket_url = 'audio/convert/' + job_id
 
     try:
-        asset = AssetQuery(DBSession).get_by_id(asset.id)
-        handle = audio_transcodec(asset.filename, asset_file)
+        assets = AssetQuery(DBSession).get_by_ids([asset.id for asset in assets])
+        updated_library = False
 
-        asset.import_handle(handle)
+        for asset, asset_file in zip(assets, asset_files):
+            handle = audio_transcodec(asset.filename, asset_file)
+            if handle:
+                asset.import_handle(handle)
+                DBSession.add(asset)
+            elif not asset.storage:
+                send_result_request(socket_url, {
+                    'stage': 'delete',
+                })
+                # only delete asset that is unable to transcode if it is newly created
+                DBSession.delete(asset)
 
-        DBSession.add(asset)
-        DBSession.flush()
+            DBSession.flush()
 
-        library = LibraryQuery(DBSession).get_library_by_id(asset.library_id)
-        library.updated_at = datetime.utcnow()
-        library.launched_at = datetime.utcnow()
+            send_result_request(socket_url, {
+                'stage': 'transcode',
+                'assetId': asset.id,
+                'error': None if handle else 'ERR_AUDIO_TRANSCODE_FAILURE',
+            })
 
-        asset_id = asset.id
+            if not updated_library and handle:
+                # update library time when new asset is added
+                library = LibraryQuery(DBSession).get_library_by_id(asset.library_id)
+                library.updated_at = datetime.utcnow()
+                library.launched_at = datetime.utcnow()
+                updated_library = True
     except Exception as error:
         send_result_request(socket_url, {
             'error': True,
@@ -457,23 +473,19 @@ def transcode_audio_asset(_settings, _safile_settings, job_id, asset, asset_file
                 'message': str(error),
             },
         })
-        if not asset.storage:
-            asset.is_deleted = True
-            transaction.commit()
     else:
         transaction.commit()
         send_result_request(socket_url, {
             'stage': 'finished',
-            'assetId': asset_id,
         })
 
 class AudioFileWorker(object):
 
-    def __init__(self, job_id, asset, asset_file):
+    def __init__(self, job_id, assets, asset_files):
         super().__init__()
         self.job_id = job_id
-        self.asset = asset
-        self.asset_file = asset_file
+        self.assets = assets
+        self.asset_files = asset_files
 
     def run(self):
         redis = Redis(
@@ -484,13 +496,13 @@ class AudioFileWorker(object):
         use_connection(redis)
 
         result = Queue().enqueue(
-            transcode_audio_asset,
+            transcode_audio_assets,
             args=(
                 settings,
                 safile_settings,
                 self.job_id,
-                self.asset,
-                self.asset_file,
+                self.assets,
+                self.asset_files,
             ),
             timeout=600
         )
