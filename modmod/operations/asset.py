@@ -110,12 +110,18 @@ def audio_transcodec(original_filename, audio_bytes):
     fdst = open(os.path.join(tempdir, original_filename), 'wb+')
     shutil.copyfileobj(fp, fdst)
 
-    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-vn', '-sn', '-dn', filename + '.mp4'], cwd=tempdir)
-    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'libvorbis', '-qscale:a', '5', '-vn', '-sn', '-dn', filename + '.ogg'], cwd=tempdir)
-    os.remove(os.path.join(tempdir, original_filename))
+    mp4_filename = filename + '.mp4'
+    ogg_filename = filename + '.ogg'
+
+    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-vn', '-sn', '-dn', mp4_filename], cwd=tempdir)
+    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'libvorbis', '-qscale:a', '5', '-vn', '-sn', '-dn', ogg_filename], cwd=tempdir)
+
+    # no mp4 or ogg files will be generated if ffmpeg operations are unsuccessful
+    file_list = subprocess.check_output('ls ' + tempdir, encoding='utf-8', shell=True)
+    if not (mp4_filename in file_list and ogg_filename in file_list):
+        return None
 
     subprocess.call(['zip', '-r', temp_zip, '.'], cwd=tempdir)
-
     try:
         factory = pyramid_safile.get_factory()
         handle = factory.create_handle(os.path.basename(temp_zip), open(temp_zip, 'rb'))
