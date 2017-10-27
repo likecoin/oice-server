@@ -225,6 +225,7 @@ class Story(Base, BaseMixin):
             'id': self.id,
             'name': self.get_name(language),
             'description': self.get_description(language),
+            'language': self.get_language(language),
             'cover': self.get_cover_storage_url(language),
             'authors': [u.serialize_min() for u in self.users],
         }

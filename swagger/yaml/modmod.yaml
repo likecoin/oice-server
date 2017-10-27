@@ -804,7 +804,7 @@ paths:
               message:
                 type: string
               story:
-                $ref: '#/definitions/Story'
+                $ref: '#/definitions/StoryMin'
               oices:
                 type: array
                 items:
@@ -3689,8 +3689,27 @@ definitions:
       updatedAt:
         type: string
         format: date-time
+      cover:
+        type: string
       coverStorage:
         type: string
+      ogImage:
+        type: string
+  StoryMin:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      description:
+        type: string
+      language:
+        type: string
+      cover:
+        type: string
+      author:
+        $ref: '#/definitions/User'
   StoryProfile:
     type: object
     properties:

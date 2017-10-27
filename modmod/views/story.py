@@ -25,7 +25,10 @@ from ..models import (
 )
 
 from . import check_is_language_valid
-from .util import normalize_story_language
+from .util import (
+    normalize_language,
+    normalize_story_language,
+)
 
 from ..config import (
     get_oice_view_url,
@@ -556,7 +559,7 @@ def get_app_story_progress(request):
         raise HTTPForbidden
 
     story = request.context
-    query_language = fetch_story_query_language(request, story)
+    query_language = normalize_language(request.GET.get('language'))
 
     # Get progress in last viewed ordering
     progress = UserReadOiceProgressQuery(DBSession).fetch_by_user_id_and_story(user.id, story) \
@@ -583,7 +586,7 @@ def get_app_story_episodes(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
     story = request.context
-    query_language = fetch_story_query_language(request, story)
+    query_language = normalize_language(request.GET.get('language'))
 
     already_viewed_oice_ids = None
     if user:
