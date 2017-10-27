@@ -14,6 +14,7 @@ from .elastic_search import (
 from .localization import (
     normalize_language,
     normalize_ui_language,
+    normalize_story_language,
     get_language_code_for_translate,
 )
 

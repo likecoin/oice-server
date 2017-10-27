@@ -7,7 +7,7 @@ import logging
 from pyramid.httpexceptions import HTTPForbidden
 from cornice import Service
 from modmod.exc import ValidationError
-from sqlalchemy import func, or_, case
+from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
 
 from ..models import (
@@ -25,7 +25,7 @@ from ..models import (
 )
 
 from . import check_is_language_valid
-from .util import normalize_language
+from .util import normalize_story_language
 
 from ..config import (
     get_oice_view_url,
@@ -426,7 +426,7 @@ def get_featured_stories(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
     # If there is no featured story in client language, return default language
-    client_language = normalize_language(request.GET.get('language', user.language if user else get_default_lang()))
+    client_language = normalize_story_language(request.GET.get('language', user.language if user else get_default_lang()))
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
     fs_language = client_language if has_fs_in_client_language else get_default_lang()
 
@@ -443,18 +443,10 @@ def get_featured_stories(request):
 
 @app_story.get()
 def get_app_story_list(request):
-
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
-    client_language = normalize_language(request.GET.get('language', user.language if user else ''))
+    client_language = normalize_story_language(request.GET.get('language', user.language if user else ''))
 
-    is_chinese_reader = client_language[:2] == 'zh'
-    is_english_reader = client_language[:2] == 'en'
-
-    user_primary_languages = ['zh-HK', 'zh-TW', 'zh-CN'] if is_chinese_reader else [client_language]
-    user_secondary_languages = [] if is_english_reader else [get_default_lang()]
-
-    user_languages = user_primary_languages + user_secondary_languages
     filtered_story_ids = set()
 
     playing_story = None
@@ -467,47 +459,14 @@ def get_app_story_list(request):
         else:
             filtered_story_ids.add(playing_story.id)
 
-    # only show story in user's primary / secondary languages, and order by primary first, then secondary
-    featured_stories = DBSession.query(FeaturedStory) \
-                                .filter(FeaturedStory.story_id.notin_(filtered_story_ids)) \
-                                .outerjoin(FeaturedStory.story) \
-                                .outerjoin(Story.localizations) \
-                                .filter( \
-                                    or_( \
-                                        Story.language.in_(user_languages), \
-                                        StoryLocalization.language.in_(user_languages) \
-                                    ) \
-                                ) \
-                                .order_by( \
-                                    case([( \
-                                        or_( \
-                                            Story.language.in_(user_primary_languages), \
-                                            StoryLocalization.language.in_(user_primary_languages) \
-                                        ), 1 \
-                                    )], else_=2) \
-                                ) \
-                                .order_by(FeaturedStory.order) \
-                                .all()
+    has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
+    fs_language = client_language if has_fs_in_client_language else get_default_lang()
+
+    featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
+                                                    .order_by(FeaturedStory.order) \
+                                                    .all()
 
     filtered_story_ids.update([fs.story_id for fs in featured_stories])
-
-    localized_stories = []
-    if not is_chinese_reader:
-        localized_stories = StoryQuery(DBSession).query \
-                                       .filter(Story.id.notin_(filtered_story_ids)) \
-                                       .outerjoin(Story.localizations) \
-                                       .filter( \
-                                            or_( \
-                                                Story.language.in_(user_primary_languages), \
-                                                StoryLocalization.language.in_(user_primary_languages) \
-                                            )
-                                       ) \
-                                       .outerjoin(Story.oice) \
-                                       .filter(Oice.state == 2) \
-                                       .filter(Oice.sharing_option == 0) \
-                                       .order_by(Story.updated_at.desc()) \
-                                       .all()
-        filtered_story_ids.update([ls.id for ls in localized_stories])
 
     before_time = datetime.datetime.utcnow()
     if 'before_time' in request.GET:
@@ -521,23 +480,17 @@ def get_app_story_list(request):
 
     limit = request.GET.get('limit', 10)
 
-    stories = StoryQuery(DBSession).query \
-                                   .filter(Story.id.notin_(filtered_story_ids)) \
-                                   .filter(Story.updated_at < before_time) \
-                                   .outerjoin(Story.oice) \
-                                   .filter(Oice.state == 2) \
-                                   .group_by(Story) \
-                                   .filter(Oice.sharing_option == 0) \
-                                   .order_by(Story.updated_at.desc()) \
-                                   .limit(limit) \
-                                   .all()
+    stories = StoryQuery(DBSession).get_stories_by_language(language=client_language,
+                                                            filtered_ids=filtered_story_ids,
+                                                            before_time=before_time,
+                                                            limit=limit)
 
     return {
         'code': 200,
         'message': 'ok',
         'playingStory': playing_story.serialize_app(user, language=client_language) if playing_story else None,
-        'featuredStories': [fs.story.serialize_app(user, language=client_language) for fs in featured_stories],
-        'localizedStories': [ls.serialize_app(user, language=client_language) for ls in localized_stories],
+        'featuredStories': [fs.story.serialize_app(user, language=fs_language) for fs in featured_stories],
+        'localizedStories': [],  # Deprecated
         'stories': [s.serialize_app(user, language=client_language) for s in stories],
     }
 
@@ -547,7 +500,7 @@ def get_app_featured_story(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
     # If there is no featured story in client language, return story in default language
-    client_language = normalize_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
+    client_language = normalize_story_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
     fs_language = client_language if has_fs_in_client_language else get_default_lang()
 
@@ -566,7 +519,7 @@ def get_app_featured_story(request):
 def get_app_story_list_v2(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
-    client_language = normalize_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
+    client_language = normalize_story_language(request.GET.get('language', user.ui_language if user else get_default_lang()))
 
     # Filter the stories (if any) from the story list
     filtered_story_ids = set(request.GET.get('filter', '').split(','))
@@ -584,19 +537,10 @@ def get_app_story_list_v2(request):
 
     limit = request.GET.get('limit', 10)
 
-    stories = StoryQuery(DBSession).query \
-                                   .filter(Story.id.notin_(filtered_story_ids)) \
-                                   .filter(Story.updated_at < before_time) \
-                                   .filter(
-                                       or_(
-                                           Story.language == client_language,
-                                           Story.localizations.any(language=client_language)
-                                          )
-                                   ) \
-                                   .filter(Story.oice.any(state=2, sharing_option=0)) \
-                                   .order_by(Story.updated_at.desc()) \
-                                   .limit(limit) \
-                                   .all()
+    stories = StoryQuery(DBSession).get_stories_by_language(language=client_language,
+                                                            filtered_ids=filtered_story_ids,
+                                                            before_time=before_time,
+                                                            limit=limit)
 
     return {
         'code': 200,

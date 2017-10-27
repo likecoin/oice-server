@@ -47,7 +47,7 @@ def fork_story(session, story, is_self_forking=False):
 
 
 def remove_story_localization(session, story, language):
-    if story.is_supported_language(language):
+    if story.has_translated_language(language):
         session.delete(story.localizations[language])
         for o in story.oice:
             if language in o.localizations:

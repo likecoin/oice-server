@@ -36,6 +36,14 @@ def normalize_ui_language(language):
     return get_default_lang()
 
 
+def normalize_story_language(language):
+    # Temporally return all stories no matter which dialect
+    if language:
+        language = language[:2]
+
+    return language
+
+
 def get_language_code_for_translate(language):
     language_code = language.lower()
 
