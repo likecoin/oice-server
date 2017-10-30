@@ -108,7 +108,7 @@ def audio_transcodec(original_filename, fp):
     fdst = open(os.path.join(tempdir, original_filename), 'wb+')
     shutil.copyfileobj(fp, fdst)
 
-    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'aac', '-b:a', '128k', '-vn', '-sn', '-dn', filename + '.mp4'], cwd=tempdir)
+    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-vn', '-sn', '-dn', filename + '.mp4'], cwd=tempdir)
     subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'libvorbis', '-qscale:a', '5', '-vn', '-sn', '-dn', filename + '.ogg'], cwd=tempdir)
     os.remove(os.path.join(tempdir, original_filename))
 
