@@ -93,14 +93,17 @@ def list_asset(request):
         'assets': assets
     }
 
+
 def validate_audio_format(extension):
     if not extension.lower() in SUPPORT_AUDIO_FORMATS:
         raise ValidationError('ERR_AUDIO_FORMAT_UNSUPPORTED')
+
 
 def handle_audio_asset_files(job_id, assets, asset_files):
     audio_bytes_list = [io.BufferedReader(f.file).read() for f in asset_files]
     worker = AudioFileWorker(job_id, assets, audio_bytes_list)
     worker.run()
+
 
 def create_asset(asset_types, asset_type, meta, asset_file, library_id, user_email, order):
     credits_url = meta.get('creditsUrl')
@@ -141,6 +144,7 @@ def create_asset(asset_types, asset_type, meta, asset_file, library_id, user_ema
                               order=order)
 
     return asset
+
 
 @library_assets_typed.post(permission='set')
 def add_asset(request):
@@ -194,6 +198,7 @@ def add_asset(request):
             }
     except ValueError as e:
         raise ValidationError(str(e))
+
 
 def add_assets(asset_types, asset_type, metas, asset_files, library_id, user_email):
     assets = []
@@ -286,17 +291,17 @@ def update_asset(request):
 
             DBSession.add(asset)
 
-        updated_asset = asset.serialize()
+        response = {
+            'code': 200,
+            'message': 'ok',
+            'asset': asset.serialize(),
+        }
         if job_id:
-            updated_asset['jobId'] = job_id
+            response['jobId'] = job_id
         else:
             asset.library.updated_at = datetime.utcnow()
 
-        return {
-            'code': 200,
-            'message': 'ok',
-            'asset': updated_asset,
-        }
+        return response
     except ValueError as e:
         raise ValidationError(str(e))
 
