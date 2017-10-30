@@ -61,7 +61,9 @@ from ..operations.block import count_words_of_block
 from .util import (
     update_user_mailchimp_stage,
     log_message,
+    normalize_language,
 )
+
 import logging
 
 
@@ -184,7 +186,7 @@ oice_translate = Service(name='oice_translate',
 
 def fetch_oice_query_language(request, oice):
     query_language = request.params.get('language')
-    return check_is_language_valid(query_language) if query_language else oice.story.language
+    return normalize_language(query_language) if query_language else oice.story.language
 
 
 @story_id_oice.get(permission='get')
