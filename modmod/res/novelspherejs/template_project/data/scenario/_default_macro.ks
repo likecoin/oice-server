@@ -141,13 +141,14 @@ if (mp.fullscreen == "true") {
   tf._dialog.height = tf.oiceDefaults.viewSize;
   tf._dialog.margin.top = tf.oiceDefaults.messageLayer.height;
 }
+tf._dialog.page = mp.fadein === 'true' ? 'back' : 'fore';
 [o2_endscript]
-;Repostion wait click glyph
-@oice_glyph framewidth=&tf._dialog.width frameheight=&tf._dialog.height
+
 ;Fade in dialog frame
-@current layer=message0 page=fore
+@backlay o2_cond="mp.fadein === 'true'"
+
 [position layer=message0
-          page=fore
+          page=&tf._dialog.page
           left=0
           top=&tf._dialog.top
           width=&tf._dialog.width
@@ -160,6 +161,16 @@ if (mp.fullscreen == "true") {
           opacity=&tf.oiceDefaults.messageLayer.opacity
           frame=""
 ]
+
+;Fade in dialog frame
+[if o2_exp="mp.fadein === 'true'"]
+	@trans method=crossfade time=200
+	@wt
+[endif]
+
+@current layer=message0 page=fore
+;Repostion wait click glyph
+@oice_glyph framewidth=&tf._dialog.width frameheight=&tf._dialog.height
 @resetfont
 @resetstyle
 [endmacro]

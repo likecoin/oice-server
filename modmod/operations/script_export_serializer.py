@@ -209,16 +209,13 @@ class ScriptVisitor(object):
 
         # dialogs
         if 'text' in attrs:
-            script += self._print_dialog(attrs['text'], full_screen)
+            script += self._print_dialog(attrs['text'], full_screen=full_screen, fade_in=True)
 
         script += self._get_waitclick()
         script += self._get_waitse(attrs)
 
         self.prev_character = None
         self.prev_message_block = block
-
-        if full_screen:
-            script += '@oice_glyph\n'
 
         return script
 
@@ -305,8 +302,11 @@ class ScriptVisitor(object):
 
         return script + "\n"
 
-    def _print_dialog(self, dialog_text, full_screen=False):
-        script = "@dialog fullscreen=%s\n" % ('true' if full_screen else 'false')
+    def _print_dialog(self, dialog_text, full_screen=False, fade_in=False):
+        script = "@dialog fullscreen=%(fullscreen)s fadein=%(fadein)s\n" % {
+            'fullscreen': 'true' if full_screen else 'false',
+            'fadein': 'true' if fade_in else 'false',
+        }
         script += ScriptVisitor.print_dialog_text(dialog_text)
         return script + "\n"
 
