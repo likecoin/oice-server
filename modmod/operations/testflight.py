@@ -54,6 +54,7 @@ def send_testflight_invitation(email, first_name=None, last_name=None):
         'limit': 1,
     }
 
+    global TESTFLIGHT_TESTERS_API_ENDPOINT
     if TESTFLIGHT_TESTERS_API_ENDPOINT is None:
         TESTFLIGHT_TESTERS_API_ENDPOINT = ITUNESCONNECT_API_BASE_URL + (
                                               '/testflight/v2' +
@@ -90,7 +91,7 @@ def send_testflight_invitation(email, first_name=None, last_name=None):
 
             elif status == 'invited':
                 # Resend invitation
-                url = ITUNESCONNECT_API_BASE_URL + '/testflight/v1/invites/%s/resend' % APP_ID
+                url = ITUNESCONNECT_API_BASE_URL + '/testflight/v1/invites/%s/resend' % get_itunesconnect_app_id()
                 response = session.post(url, params={'testerId': tester['id']})
                 if response.status_code != requests.codes.ok:
                     raise ValidationError('ERR_TESTFLIGHT_RESEND_INVITATION_FAILURE')
