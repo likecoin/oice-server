@@ -117,7 +117,7 @@ def audio_transcodec(original_filename, audio_bytes):
     subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'libvorbis', '-qscale:a', '5', '-vn', '-sn', '-dn', ogg_filename], cwd=tempdir)
 
     # no mp4 or ogg files will be generated if ffmpeg operations are unsuccessful
-    file_list = subprocess.check_output('ls ' + tempdir, encoding='utf-8', shell=True)
+    file_list = os.listdir(tempdir)
     if not (mp4_filename in file_list and ogg_filename in file_list):
         return None
 
