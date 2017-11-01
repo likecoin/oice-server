@@ -174,9 +174,14 @@ oice_id_wordcount = Service(name='oice_id_wordcount',
                             renderer='json',
                             factory=OiceFactory,
                             traverse='/{oice_id}')
-oice_communication = Service(name='oice_communication',
-                    path='oice/communication',
-                    renderer='json')
+oice_communication = Service(
+    name='oice_communication',
+    path='oice/communication',
+    renderer='json')
+oice_communication_v2 = Service(
+    name='oice_communication_v2',
+    path='v2/oice/communication',
+    renderer='jsonp')
 oice_translate = Service(name='oice_translate',
                         path='oice/{oice_id}/translate',
                         renderer='json',
@@ -796,7 +801,7 @@ def get_word_count_of_oice(request):
 
 @oice_communication.get()
 def communicate(request):
-    result = {};
+    result = {}
 
     communicate_type = request.GET.get('type')
     if communicate_type == 'interaction':
@@ -807,6 +812,20 @@ def communicate(request):
         "message": "ok",
         "result": result,
     }
+
+
+@oice_communication_v2.get()
+def communicate(request):
+    response = {
+        "code": 200,
+        "message": "ok",
+    }
+
+    communicate_type = request.GET.get('type')
+    if communicate_type == 'interaction':
+        response['script'] = OICE_INTERACTION_SCRIPT
+
+    return response
 
 
 @oice_translate.post(permission='get')

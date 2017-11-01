@@ -1724,6 +1724,22 @@ paths:
                 type: string
               result:
                 type: object
+  /v2/oice/communication:
+    get:
+      summary: Oice communicate with server
+      tags:
+      - Oice
+      responses:
+        200:
+          description: Response of the communication
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              script:
+                type: object
   /user/{userId}/story/{storyId}:
     get:
       summary: Get list of public oice given story id
