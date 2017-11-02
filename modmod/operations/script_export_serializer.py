@@ -298,7 +298,7 @@ class ScriptVisitor(object):
 
                 # Handle special symobl of KAG
                 dialog = re.sub(r'([\t;@#&*%]+)',
-                                r'[o2_iscript]tf._specialChars = "\\1";[o2_endscript][ch text=&tf._specialChars]',
+                                r'[o2_iscript]tf._specialChars = "\1";[o2_endscript][ch text=&tf._specialChars]',
                                 dialog)
 
                 script += dialog
