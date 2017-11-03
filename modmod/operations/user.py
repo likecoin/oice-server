@@ -28,23 +28,26 @@ def start_trial(user):
 
 def handle_membership_update(user, original_transaction_id, expire_timestamp, \
                                         developer_payload, platform, payout_amount):
-    if developer_payload.split(':')[0] == 'subs':
+    if 'android' == platform and developer_payload.split(':')[0] == 'subs':
+        # load developer_payload in Android receipt
         developer_payload = developer_payload.split(':')[2:]
         developer_payload = ':'.join(developer_payload)
-    payload_dict = json.loads(developer_payload)
-    oice_id = None
 
-    if payload_dict['email'] != user.email:
+        developer_payload = json.loads(developer_payload)
+
+    if developer_payload['email'] != user.email:
         raise ValidationError('ERR_IAP_VALIDATOR_USER_NOT_MATCH')
 
-    if 'oiceId' in payload_dict and user.is_new_subscribe \
+    if 'oiceId' in developer_payload and user.is_new_subscribe \
         and (UserSubscriptionPayoutQuery(DBSession).fetch_by_transaction_id(original_transaction_id) is None):
-        oice_id = payload_dict['oiceId']
+        oice_id = developer_payload['oiceId']
         target_user = OiceQuery(DBSession).get_by_id(oice_id).story.users[0]
-        user_subscription_payout = UserSubscriptionPayout(subscription_user_id = user.id, oice_id=oice_id, \
-                                        author_id=target_user.id, platform=platform, \
-                                        original_transaction_id=original_transaction_id, \
-                                        payout_amount=payout_amount)
+        user_subscription_payout = UserSubscriptionPayout(subscription_user_id=user.id, \
+                                                          oice_id=oice_id, \
+                                                          author_id=target_user.id, \
+                                                          platform=platform, \
+                                                          original_transaction_id=original_transaction_id, \
+                                                          payout_amount=payout_amount)
         DBSession.add(user_subscription_payout)
         # handle share $ to oice author
 
