@@ -213,7 +213,7 @@ class Story(Base, BaseMixin):
             'name': self.get_name(language),
             'description': self.get_description(language),
             'language': self.get_language(language),
-            'author' : self.users[0].serialize() if self.users else None,  # assume user[0] is author
+            'author' : self.users[0].serialize_min() if self.users else None,  # assume user[0] is author
             'updatedAt': self.updated_at.isoformat(),
             'cover': self.get_cover_storage_url(language),
             'coverStorage': self.get_cover_storage_url(language), # deprecated
