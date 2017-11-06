@@ -5,6 +5,7 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from sqlalchemy import engine_from_config
 from pyramid.security import ALL_PERMISSIONS
 from pyramid.security import Allow
+from pyramid.renderers import JSONP
 import pyramid_safile
 import stripe
 import logging
@@ -72,6 +73,7 @@ def main(global_config, **settings):
     config.add_static_view('static', 'static', cache_max_age=3600)
     upload_dir = os.path.abspath(settings['upload_dir'])
     config.add_static_view('upload', upload_dir, cache_max_age=3600)
+    config.add_renderer('jsonp', JSONP(param_name='callback'))
 
     config.scan(ignore=['modmod.scripts','modmod.tests'])
     config.include('.config')
