@@ -320,10 +320,7 @@ def post_ios_subscription(request):
 
         original_transaction_id = response_dict['original_transaction_id']
         expire_date = response_dict['expires_date']
-        developer_payload = {
-            'email': payload['email'],
-            'oiceId': payload['oiceId'],
-        }
+        developer_payload = payload['developerPayload']
         payout_amount = int(math.ceil(get_iap_sub_price() * get_iap_sub_price_payout_ratio() * 100))/100.0
         result = UserOperations.handle_membership_update(user, original_transaction_id, \
                                             expire_date, developer_payload, "ios", \
