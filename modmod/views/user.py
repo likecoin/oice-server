@@ -518,7 +518,7 @@ def get_user_id_profile_details(request):
     for library in user.libraries:
         if library.is_public and not library.is_deleted:
             user_libraries.add(library)
-            libraries_asset_ids[library.id] = [asset.id for asset in library.asset if not asset.is_deleted]
+            libraries_asset_ids[library.id] = [asset.id for asset in library.asset]
             user_libraries_ids.add(library.id)
 
     # handle asset credits (BUT NOT the owner of library)

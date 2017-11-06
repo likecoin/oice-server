@@ -3,6 +3,7 @@ from ..models import (
     Asset,
 )
 import transaction
+import io
 import logging
 import os
 import subprocess
@@ -100,7 +101,8 @@ def delete_asset(session, asset):
     asset.is_deleted = True
 
 
-def audio_transcodec(original_filename, fp):
+def audio_transcodec(original_filename, audio_bytes):
+    fp = io.BufferedRandom(io.BytesIO(audio_bytes))
     filename = os.path.splitext(original_filename)[0]
     tempdir = tempfile.mkdtemp()
     temp_zip = os.path.join(tempfile.mkdtemp(), filename + '.zip')
@@ -108,18 +110,24 @@ def audio_transcodec(original_filename, fp):
     fdst = open(os.path.join(tempdir, original_filename), 'wb+')
     shutil.copyfileobj(fp, fdst)
 
-    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-vn', '-sn', '-dn', filename + '.mp4'], cwd=tempdir)
-    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'libvorbis', '-qscale:a', '5', '-vn', '-sn', '-dn', filename + '.ogg'], cwd=tempdir)
-    os.remove(os.path.join(tempdir, original_filename))
+    mp4_filename = filename + '.mp4'
+    ogg_filename = filename + '.ogg'
+
+    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-vn', '-sn', '-dn', mp4_filename], cwd=tempdir)
+    subprocess.call(['ffmpeg', '-i', original_filename, '-c:a', 'libvorbis', '-qscale:a', '5', '-vn', '-sn', '-dn', ogg_filename], cwd=tempdir)
+
+    # no mp4 or ogg files will be generated if ffmpeg operations are unsuccessful
+    file_list = os.listdir(tempdir)
+    if not (mp4_filename in file_list and ogg_filename in file_list):
+        return None
 
     subprocess.call(['zip', '-r', temp_zip, '.'], cwd=tempdir)
-
     try:
         factory = pyramid_safile.get_factory()
         handle = factory.create_handle(os.path.basename(temp_zip), open(temp_zip, 'rb'))
         os.remove(temp_zip)
     except FileNotFoundError:
-        raise ValidationError('ERR_AUDIO_TRANSCODE_FAILURE')
+        return None
     else:
         subprocess.call(['unzip', '-o', handle.dst, '-d', os.path.dirname(handle.dst)])
     finally:

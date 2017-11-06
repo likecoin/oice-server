@@ -32,10 +32,13 @@ class Library(Base, BaseMixin):
 
     name = sa.Column(sa.Unicode(1024), nullable=False, server_default="")
     asset = relationship(Asset,
-                      primaryjoin="and_(Library.id==Asset.library_id \
-                      ,Asset.is_deleted==false())",
-                      cascade="all,delete",
-                      backref=backref("library", lazy="joined"))
+                        primaryjoin='''and_(
+                                            Library.id==Asset.library_id, \
+                                            Asset.is_deleted==false(), \
+                                            Asset.storage!=null() \
+                                        )''',
+                        cascade="all,delete",
+                        backref=backref("library", lazy="joined"))
     is_deleted = sa.Column(sa.Boolean, nullable=False, server_default=false())
     description = sa.Column(sa.Unicode(4096), nullable=False, server_default="")
     license = sa.Column(sa.SmallInteger, nullable=False, server_default='0')

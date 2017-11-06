@@ -79,6 +79,24 @@ app.post('/build', function (req, res) {
     buildNamespace.to(id).emit(message == 'ok' ? 'finished' : 'failed', payload);
 });
 
+var addAudioNameSpace = io.of('/audio/convert');
+addAudioNameSpace.on('connection', function (socket) {
+  socket.on('listen', function (jobId) {
+    socket.join(jobId);
+  });
+});
+
+app.post('/audio/convert/:jobId', function (req, res) {
+  var jobId = req.params.jobId;
+  res.json({
+    message: 'ok',
+    jobId: jobId,
+  });
+
+  addAudioNameSpace.to(jobId).emit('event', req.body);
+});
+
+
 var pollingTimer = setInterval(function() {
   request.post(process.env.MODMOD_TRIAL_URL || "http://modmod:6543/trial_hook", function (error, response, body) {
     // do nothing
