@@ -60,6 +60,7 @@ class Character(Base, BaseMixin):
 
     __table_args__ = (
         UniqueConstraint('library_id', 'uuid'), # Composite unique key [project_id, uuid]
+        sa.Index('library_id_deleted_idx', 'library_id', 'is_deleted'),
     )
 
     def __init__(self, *arg, **kw):

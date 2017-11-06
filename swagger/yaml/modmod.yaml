@@ -3698,7 +3698,7 @@ definitions:
       language:
         type: string
       author:
-        $ref: '#/definitions/User'
+        $ref: '#/definitions/UserMin'
       updatedAt:
         type: string
         format: date-time
@@ -3793,7 +3793,7 @@ definitions:
       isCollaborator:
         type: boolean
       author:
-        $ref: '#/definitions/User'
+        $ref: '#/definitions/UserMin'
       updatedAt:
         type: string
         format: date-time
@@ -4216,8 +4216,12 @@ definitions:
         type: integer
       url:
         type: string
-      tag:
+      creditUrl:
         type: string
+      users:
+        type: array
+        items:
+          $ref: '#/definitions/UserMin'
   Character:
     type: object
     properties:

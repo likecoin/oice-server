@@ -35,10 +35,13 @@ class Asset(Base, BaseMixin):
     credits_url = sa.Column(sa.Unicode(1024), nullable=False, server_default='')
     content_type = sa.Column(sa.Unicode(1024), nullable=True)
     order = sa.Column(sa.Integer, nullable=False, server_default='0')
-    library_id = sa.Column(
-        sa.Integer, sa.ForeignKey('library.id'), nullable=False)
+    library_id = sa.Column(sa.Integer, sa.ForeignKey('library.id'), nullable=False)
     is_deleted = sa.Column(sa.Boolean, nullable=False, server_default=false())
     is_hidden = sa.Column(sa.Boolean, nullable=False, server_default=false())
+
+    __table_args__ = (
+        sa.Index('asset_library_idx', 'library_id', 'is_deleted'),
+    )
 
     users = relationship(
         "User",
@@ -59,7 +62,7 @@ class Asset(Base, BaseMixin):
             'contentType': self.content_type,
             'url': self.url(),
             'order': self.order,
-            'users': [user.serialize() for user in self.users] if self.users else None,
+            'users': [user.serialize_min() for user in self.users] if self.users else None,
             'creditsUrl': self.credits_url,
         }
 

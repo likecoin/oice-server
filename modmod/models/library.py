@@ -2,7 +2,7 @@ import json
 import os
 import itertools
 import sqlalchemy as sa
-from sqlalchemy import func
+from sqlalchemy import func, Index
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import true, false
@@ -44,9 +44,9 @@ class Library(Base, BaseMixin):
     license = sa.Column(sa.SmallInteger, nullable=False, server_default='0')
     cover_storage = sa.Column(FileHandleStore, nullable=True)
     is_public = sa.Column(sa.Boolean, nullable=False, server_default=false())
-    is_default = sa.Column(sa.Boolean, nullable=False, server_default=false())
+    is_default = sa.Column(sa.Boolean, nullable=False, index=True, server_default=false())
     priority = sa.Column(sa.Integer, nullable=False, server_default='0')
-    price = sa.Column(sa.Float, nullable=False, server_default='-1')
+    price = sa.Column(sa.Float, nullable=False, index=True, server_default='-1')
     launched_at = sa.Column(sa.DateTime, nullable=True)
     users = relationship(
         "User",
@@ -65,6 +65,10 @@ class Library(Base, BaseMixin):
         lazy='select',
         cascade='',
         backref=backref("libraries_purchased", lazy="select")
+    )
+
+    __table_args__ = (
+        Index('ispublic_launchedat_idx', 'is_public', 'launched_at'),
     )
 
     @property
@@ -116,7 +120,7 @@ class Library(Base, BaseMixin):
         serialized_library = self.serialize_min()
         serialized_library['description'] = self.description
         serialized_library['isCollaborator'] = user in self.users
-        serialized_library['author'] = self.users[0].serialize() if self.users else None  # Assume user[0] is the author
+        serialized_library['author'] = self.users[0].serialize_min() if self.users else None  # Assume user[0] is the author
         serialized_library['updatedAt'] = self.updated_at.isoformat()
         serialized_library['launchedAt'] = self.launched_at.isoformat() if self.launched_at else None
         serialized_library['isSelected'] = self.has_user_selected(user)
@@ -142,7 +146,7 @@ class Library(Base, BaseMixin):
         serialized_store['createdAt'] = self.created_at.isoformat()
         serialized_store['updatedAt'] = self.updated_at.isoformat()
         serialized_store['launchedAt'] = self.launched_at.isoformat() if self.launched_at else None
-        serialized_store['author'] = self.users[0].serialize() if self.users else None  # Assume user[0] is the author
+        serialized_store['author'] = self.users[0].serialize_min() if self.users else None  # Assume user[0] is the author
         serialized_store['credits'] = [u.serialize_credit() for u in self.get_assset_credits()]
         serialized_store['isSelected'] = self.has_user_selected(user)
         return serialized_store
