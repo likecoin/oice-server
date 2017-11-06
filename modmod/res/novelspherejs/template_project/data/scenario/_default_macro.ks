@@ -119,6 +119,12 @@ Tag.actions.oice_request = new TagAction({
 [endmacro]
 
 
+[macro name=oice_jump]
+@eval o2_exp="tf._hasJumped = true"
+@jump storage=%storage target=%target
+[endmacro]
+
+
 ;Dialog
 ;======
 [macro name=keyword]
@@ -315,6 +321,9 @@ if (!tf._characterdialog) {
 ;path=npcdata的pathDl的值，是人物变暗并移动的目的地路径；
 ;例如:pathDl=(-110,-90,255)，第三个参数是透明度，这里固定填255；
 ;mopacity="172"，是人物变暗的尺度，固化数值，不给用户修改；
+[if o2_exp="tf._hasJumped"]
+@eval o2_exp="tf._hasJumped = false"
+[else]
 @stoptrans
 @image storage=%storage layer=1 page=fore top=%top|0 left=%left|0 visible=true mcolor=0x000000 mopacity=172 fliplr=%fliplr|0
 @wait time=50
@@ -323,6 +332,7 @@ if (!tf._characterdialog) {
 @layopt layer=2 index=20
 @layopt layer=3 index=30
 @wm canskip=true
+[endif]
 [endmacro]
 
 [macro name=fgRightToDark]
@@ -330,6 +340,9 @@ if (!tf._characterdialog) {
 ;path=npcdata的pathDr的值，是人物变暗并移动的目的地路径；
 ;例如:pathDr=(-110,-90,255)，第三个参数是透明度，这里固定填255；
 ;mopacity="172"，是人物变暗的尺度，固化数值，不给用户修改；
+[if o2_exp="tf._hasJumped"]
+@eval o2_exp="tf._hasJumped = false"
+[else]
 @stoptrans
 @image storage=%storage layer=2 page=fore top=%top|0 left=%left|0 visible=true mcolor=0x000000 mopacity=172 fliplr=%fliplr|1
 @wait time=50
@@ -338,6 +351,7 @@ if (!tf._characterdialog) {
 @layopt layer=2 index=5
 @layopt layer=3 index=30
 @wm canskip=true
+[endif]
 [endmacro]
 
 [macro name=fgLeftToBright]
@@ -460,6 +474,8 @@ OptionButton.prototype.importFromKAGArgs = function (args) {
     var _click = this.click;
 
     this.click = function (x, y, layer, isSynthetic) {
+        tf._hasJumped = true;
+
         var payload = {
             oiceId: this.oiceId,
             blockId: this.blockId,
