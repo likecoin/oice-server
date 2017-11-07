@@ -1,14 +1,14 @@
 """Add index for tables
 
 Revision ID: 2d106555cb25
-Revises: 5a75f1d14bfe
+Revises: 9804fcc0336f
 Create Date: 2017-11-06 03:53:25.258230
 
 """
 
 # revision identifiers, used by Alembic.
 revision = '2d106555cb25'
-down_revision = '5a75f1d14bfe'
+down_revision = '9804fcc0336f'
 branch_labels = None
 depends_on = None
 

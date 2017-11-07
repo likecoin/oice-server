@@ -1,13 +1,13 @@
 """Allow asset storage be null
 
-Revision ID: 3a0dd2b39688
+Revision ID: 9804fcc0336f
 Revises: 5a75f1d14bfe
 Create Date: 2017-10-23 02:10:32.141508
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '3a0dd2b39688'
+revision = '9804fcc0336f'
 down_revision = '5a75f1d14bfe'
 branch_labels = None
 depends_on = None
