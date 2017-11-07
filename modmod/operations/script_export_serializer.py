@@ -109,6 +109,13 @@ class ScriptVisitor(object):
 
         return script
 
+    def visit_jump_block(self, block, language):
+        attrs = block.get_localized_attributes()
+        return '@oice_jump storage="%(storage)s" target="%(target)s"\n' % {
+            'storage': language + '.ks',
+            'target': attrs['target'],
+        }
+
     def visit_label_block(self, block, language):
         attrs = block.get_localized_attributes(language)
 
