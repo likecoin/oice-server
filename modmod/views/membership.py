@@ -307,9 +307,9 @@ def post_ios_subscription(request):
         raise HTTPForbidden
 
     payload = request.json_body
-    payload = {'receipt': payload['receipt']}
+    receipt = {'receipt': payload['receipt']}
     url = get_ios_iap_validator_url()
-    r = requests.post(url, data=payload)
+    r = requests.post(url, data=receipt)
     result = None
     if r.status_code == requests.codes.ok:
         response_content = r.text
@@ -317,9 +317,10 @@ def post_ios_subscription(request):
         code = response_dict['code']
         if code != 0:
             raise ValidationError('ERR_IAP_VALIDATOR_NON_ZERO')
+
         original_transaction_id = response_dict['original_transaction_id']
         expire_date = response_dict['expires_date']
-        developer_payload = response_dict['developer_payload']
+        developer_payload = payload['developerPayload']
         payout_amount = int(math.ceil(get_iap_sub_price() * get_iap_sub_price_payout_ratio() * 100))/100.0
         result = UserOperations.handle_membership_update(user, original_transaction_id, \
                                             expire_date, developer_payload, "ios", \
