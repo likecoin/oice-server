@@ -261,6 +261,7 @@ class ScriptExporter(object):
         # Generate config.json
         config = EXPORT_DEFAULT.NOVELSPHERE_CONFIG
         config['title'] = self.title
+        config['defaultLanguage'] = self.oice.story.language
 
         # Adjust config based on scale factor
         for attr in EXPORT_DEFAULT.SCALABLE_CONFIG_ITEMS:

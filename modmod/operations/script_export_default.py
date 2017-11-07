@@ -28,7 +28,7 @@ NOVELSPHERE_CONFIG = {
     'messageLayerCurrentHeight': SCREEN_SIZE,
     'messageLayerDefaultAutoReturn': True,
     'messageLayerDefaultFontSize': 48,
-    'messageLayerDefaultFontFace': 'Noto Sans TC',
+    'messageLayerDefaultFontFace': 'Noto Sans',
     'messageLayerDefaultFontColor': '0xFFFFFF',
     'messageLayerDefaultFontBold': False,
     'messageLayerDefaultFontItalic': False,
@@ -51,7 +51,7 @@ NOVELSPHERE_CONFIG = {
     'messageLayerDefaultLinkColor': '0x0080ff',
     'messageLayerDefaultLinkOpacity': 64,
     'messageLayerVertical': False,
-    'historyLayerFontFace': 'Noto Sans TC',
+    'historyLayerFontFace': 'Noto Sans',
     'historyLayerFontColor': '0xffffff',
     'historyLayerFontBold': False,
     'historyLayerFontHeight': 20,
@@ -93,10 +93,9 @@ NOVELSPHERE_CONFIG = {
     'thumbnailWidth': 540,
     'autoModePageWait': 30,
     'autoModeLineWait': 30,
-    # Custom configs
-    'preloadRes': True,
-    'preload': True,
-    'forcePreloadSoundAndVideoInIOS': True
+
+    # Custom config
+    'preload': True
 }
 
 SCALABLE_CONFIG_ITEMS = [
