@@ -369,7 +369,7 @@ def get_word_count_of_story(request):
 @story_build.get(permission='admin_set')
 def build_story(request):
     story = request.context
-    oices = story.oice
+    oices = story.published_oices
     batchId = uuid.uuid4().hex
 
     for oice in oices:
