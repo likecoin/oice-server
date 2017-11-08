@@ -286,9 +286,8 @@ def post_android_subscription(request):
     payload_dict = json.loads(developer_payload)
     if 'oiceId' in payload_dict:
         oice_id = payload_dict['oiceId']
-        target_user = OiceQuery(DBSession).get_by_id(oice_id).story.users[0]
         oice = OiceQuery(DBSession).get_by_id(oice_id=oice_id)
-        log_dict = set_basic_info_oice_log_author(target_user, oice, log_dict)
+        log_dict = set_basic_info_oice_log_author(oice=oice, log_dict=log_dict)
     log_dict = set_basic_info_membership_log(user, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_USER, log_dict)
@@ -305,6 +304,11 @@ def post_ios_subscription(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
     if not user:
         raise HTTPForbidden
+
+    if user.is_new_subscribe:
+        log_action = 'startSubscribe'
+    else:
+        log_action = 'reSubscribe'
 
     payload = request.json_body
     receipt = {'receipt': payload['receipt']}
@@ -327,6 +331,21 @@ def post_ios_subscription(request):
                                             payout_amount)
     else:
         raise ValidationError('ERR_IAP_VALIDATOR_CONN')
+
+    length = math.ceil(len(payload["receipt"])/2)
+    log_dict = {
+        'action': log_action,
+        'receiptPartA': payload["receipt"][0:length],
+        'receiptPartB': payload["receipt"][length:],
+    }
+    payload_dict = json.loads(developer_payload)
+    if 'oiceId' in payload_dict:
+        oice_id = payload_dict['oiceId']
+        oice = OiceQuery(DBSession).get_by_id(oice_id=oice_id)
+        log_dict = set_basic_info_oice_log_author(oice=oice, log_dict=log_dict)
+    log_dict = set_basic_info_membership_log(user, log_dict)
+    log_dict = set_basic_info_log(request, log_dict)
+    log_message(KAFKA_TOPIC_USER, log_dict)
 
     return {
         "user": user.serialize(),

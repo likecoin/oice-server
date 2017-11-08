@@ -1,4 +1,5 @@
 # pylama:ignore=W:select=W611,ignore=E501
+from datetime import datetime
 import json
 import locale
 import stripe
@@ -186,6 +187,8 @@ def set_basic_info_membership_log(user, log_dict=None):
             'isCancelled': user.is_cancelled,
             'isTrial': user.is_trial,
             'subscriptPlatform': user.platform,
+            'createDate': user.created_at.isoformat(),
+            'dayAfterCreate': (datetime.utcnow() - user.created_at).days,
         })
     return log_dict
 
@@ -197,6 +200,8 @@ def set_basic_info_oice_log(user, oice, log_dict=None):
         'user': user.display_name,
         'email': user.email,
         'userId': user.id,
+        'createDate': user.created_at.isoformat(),
+        'dayAfterCreate': (datetime.utcnow() - user.created_at).days,
         'oice': oice.filename,
         'oiceId': oice.id,
         'oiceUuid': oice.uuid,
@@ -206,19 +211,22 @@ def set_basic_info_oice_log(user, oice, log_dict=None):
     return log_dict
 
 
-def set_basic_info_oice_log_author(user, oice, log_dict=None):
+def set_basic_info_oice_log_author(user=None, oice=None, log_dict=None):
     if log_dict is None:
         log_dict = {}
-    log_dict.update({
-        'writer': user.display_name,
-        'writerEmail': user.email,
-        'writerId': user.id,
-        'oice': oice.filename,
-        'oiceId': oice.id,
-        'oiceUuid': oice.uuid,
-        'story': oice.story.name,
-        'storyId': oice.story_id,
-    })
+    if oice:
+        if not user:
+            user = oice.story.users[0]
+        log_dict.update({
+            'writer': user.display_name,
+            'writerEmail': user.email,
+            'writerId': user.id,
+            'oice': oice.filename,
+            'oiceId': oice.id,
+            'oiceUuid': oice.uuid,
+            'story': oice.story.name,
+            'storyId': oice.story_id,
+        })
     return log_dict
 
 
@@ -287,6 +295,8 @@ def set_basic_info_user_log(user, log_dict=None):
             'user': user.display_name,
             'email': user.email,
             'userId': user.id,
+            'createDate': user.created_at.isoformat(),
+            'dayAfterCreate': (datetime.utcnow() - user.created_at).days,
         })
     return log_dict
 
@@ -310,8 +320,11 @@ def set_basic_info_log(request, log_dict=None):
         log_dict = {}
     client_ip = request.headers.get('X-Real-IP', '')
     forward_ip = request.headers.get('X-Forwarded-For', '').split(', ')[0]
+
+    webhook_remote_addr = dict_get_value(request.json_body, ['metadata', 'ip'])
+
     log_dict.update({
-        'remoteAddr'     : forward_ip or client_ip,
+        'remoteAddr'     : webhook_remote_addr if webhook_remote_addr else forward_ip or client_ip,
         'platform'       : request.headers.get('x-oice-platform', 'unknown'),
         'platformVersion': request.headers.get('x-oice-platform-version'),
         'browser'        : request.headers.get('x-oice-browser'),

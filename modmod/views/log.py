@@ -93,7 +93,6 @@ def logClickDeeplink(request):
             'model'    : dict_get_value(data, ['metadata', 'model'], 'none'),
             'country'  : dict_get_value(data, ['metadata', 'country'], 'none'),
             'osVersion': dict_get_value(data, ['metadata', 'os_version'], 'none'),
-            'ipString' : dict_get_value(data, ['metadata', 'ip'], 'none'),
         }
         log_dict = set_basic_info_referrer_log(
             dict_get_value(data, ['link_data', 'data', '+referrer'], 'none'),
@@ -124,7 +123,6 @@ def logOpenDeeplink(request):
         'clickId'         : dict_get_value(data, ['session_referring_click_id'], 'none'),
         'country'         : dict_get_value(data, ['metadata', 'country'], 'none'),
         'osVersion'       : dict_get_value(data, ['metadata', 'os_version'], 'none'),
-        'ipString'        : dict_get_value(data, ['metadata', 'ip'], 'none'),
         'firstReferringAt': dict_get_value(data, ['metadata', 'first_referring_click_timestamp']),
     }
     log_dict = set_basic_info_referrer_log(
@@ -138,7 +136,7 @@ def logOpenDeeplink(request):
             log_dict = set_basic_info_oice_source_log(oice_source.story.users[0], oice_source, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_dict.update({
-            'abtest'   : dict_get_value(data, ['session_referring_link_data', 'data', 'abtest']),
+        'abtest'   : dict_get_value(data, ['session_referring_link_data', 'data', 'abtest']),
     })
     log_message(KAFKA_TOPIC_ACQUISITION,log_dict)
     return _LOG_SUCCESS
@@ -156,7 +154,6 @@ def logInstallDeeplink(request):
         'clickId'         : dict_get_value(data, ['session_referring_click_id'], 'none'),
         'country'         : dict_get_value(data, ['metadata', 'country'], 'none'),
         'osVersion'       : dict_get_value(data, ['metadata', 'os_version'], 'none'),
-        'ipString'        : dict_get_value(data, ['metadata', 'ip'], 'none'),
         'firstReferringAt': dict_get_value(data, ['metadata', 'first_referring_click_timestamp']),
     }
     log_dict = set_basic_info_referrer_log(
@@ -170,8 +167,8 @@ def logInstallDeeplink(request):
             log_dict = set_basic_info_oice_source_log(oice_source.story.users[0], oice_source, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_dict.update({
-            'abtest'   : dict_get_value(data, ['session_referring_link_data', 'data', 'abtest']),
-        })
+        'abtest'   : dict_get_value(data, ['session_referring_link_data', 'data', 'abtest']),
+    })
     log_message(KAFKA_TOPIC_ACQUISITION, log_dict)
     return _LOG_SUCCESS
 
