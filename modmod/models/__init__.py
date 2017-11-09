@@ -29,7 +29,7 @@ from .oice import (
 )
 
 from .macro import (
-    Macro, MacroQuery
+    Macro, MacroFactory, MacroQuery
 )
 
 from .block import (

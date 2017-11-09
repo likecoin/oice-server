@@ -5,23 +5,29 @@ from modmod.exc import ValidationError
 
 from ..models import (
     DBSession,
-    StoryFactory,
-    LibraryFactory,
     Macro,
+    MacroFactory,
     MacroQuery,
-    AttributeDefinition
 )
 
 log = logging.getLogger(__name__)
-macro = Service(name='macro',
-                     path='macro',
-                     renderer='json')
-detail_macro = Service(name='detail_macro',
-                       path='macro/{macro_id}',
-                       renderer='json')
+
+api_macro = Service(
+    name='macro',
+    path='macro',
+    renderer='json',
+)
+
+api_macro_id = Service(
+    name='detail_macro',
+    path='macro/{macro_id}',
+    factory=MacroFactory,
+    traverse='/{macro_id}',
+    renderer='json',
+)
 
 
-@macro.get(permission='get')
+@api_macro.get(permission='get')
 def list_macro(request):
     macro_list = MacroQuery(DBSession).query()
     return {
@@ -30,7 +36,7 @@ def list_macro(request):
     }
 
 
-@macro.post(permission='admin_set')
+@api_macro.post(permission='admin_set')
 def add_macro(request):
     name = request.json_body.get('chineseName', None)
     tagname = request.json_body.get('name', None)
@@ -56,37 +62,23 @@ def add_macro(request):
         }
 
 
-@detail_macro.get(permission='get')
+@api_macro_id.get(permission='get')
 def macro_detail(request):
-    request_macro_id = request.matchdict['macro_id']
-
-    macro = DBSession.query(Macro) \
-        .filter(Macro.id == request_macro_id) \
-        .one()
-
-    attributesDef = DBSession \
-        .query(AttributeDefinition) \
-        .filter(AttributeDefinition.macro_id == request_macro_id) \
-        .all()
+    macro = request.context
 
     result = macro.serialize()
-    result["attributes"] = [attribute_definition.serialize() for attribute_definition in attributesDef]
+    result["attributes"] = [attribute_definition.serialize() for attribute_definition in macro.attribute_definitions]
     return {
         'code': 200,
         'macro': result
     }
 
 
-@detail_macro.post(permission='admin_set')
+@api_macro_id.post(permission='admin_set')
 def update_macro(request):
+    macro = request.context
 
-    macro_id = request.matchdict['macro_id']
     try:
-
-        macro = DBSession.query(Macro) \
-            .filter(Macro.id == macro_id) \
-            .one()
-
         if 'chineseName' in request.json_body:
             macro.name = request.json_body['chineseName']
 
