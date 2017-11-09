@@ -15,6 +15,7 @@ class AttributeDefinition(Base, BaseMixin):
     attribute_name = sa.Column(sa.Unicode(1024), nullable=False, server_default="")
     asset_type = sa.Column(sa.Unicode(1024), nullable=False, server_default="")
     required = sa.Column(sa.Boolean, nullable=False, server_default=false())
+    order = sa.Column(sa.Integer, nullable=False, server_default='0')
     default_value = sa.Column(sa.Unicode(1024), nullable=True)
     localizable = sa.Column(sa.Boolean, nullable=False, server_default=false())
 
@@ -23,6 +24,10 @@ class AttributeDefinition(Base, BaseMixin):
     asset_type_ref = relationship("AssetType")
     macro_id = sa.Column(
         sa.Integer, sa.ForeignKey('macro.id'), nullable=False)
+
+    __table_args__ = (
+        sa.Index('macro_order_idx', 'macro_id', 'order'),
+    )
 
     def serialize(self):
         return {

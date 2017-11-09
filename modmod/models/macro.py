@@ -22,6 +22,7 @@ class Macro(Base, BaseMixin):
 
     attribute_definitions = relationship("AttributeDefinition",
                                          cascade="all,delete",
+                                         order_by='AttributeDefinition.order',
                                          backref="macro",
                                          lazy="select")
     macro_type = sa.Column(sa.Unicode(1024), server_default='system')

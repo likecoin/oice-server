@@ -210,13 +210,22 @@ class ScriptVisitor(object):
     def visit_aside_block(self, block, language):
         attrs = block.get_localized_attributes(language)
 
-        script = '@asideTalk\n'
-
+        name = attrs.get('name', None)
         full_screen = bool(attrs.get('fullscreen'))
 
-        # dialogs
+        script = ''
+
+        # Display name
+        if not full_screen and name:
+            if self.prev_character_name != name:
+                self.prev_character_name = name
+                script += '@charactername name="%s"\n' % name
+        else:
+            script += '@asideTalk\n'
+
+        # Display dialogs
         if 'text' in attrs:
-            script += self._print_dialog(attrs['text'], full_screen=full_screen, fade_in=True)
+            script += self._print_dialog(attrs['text'], full_screen=full_screen, fade_in=full_screen or not name)
 
         script += self._get_waitclick()
         script += self._get_waitse(attrs)
