@@ -42,6 +42,8 @@ is_production = False
 
 
 def dict_get_value(_dict, keys_array, default_value=None):
+    if not isinstance(_dict, dict):
+        return None
     for i, key in enumerate(keys_array):
         if i < len(keys_array) - 1:
             _dict = _dict.get(key, {})
@@ -318,13 +320,16 @@ def set_basic_info_referrer_log(referrer, referrer2, log_dict=None):
 def set_basic_info_log(request, log_dict=None):
     if log_dict is None:
         log_dict = {}
+
     client_ip = request.headers.get('X-Real-IP', '')
     forward_ip = request.headers.get('X-Forwarded-For', '').split(', ')[0]
-
-    webhook_remote_addr = dict_get_value(request.json_body, ['metadata', 'ip'])
+    try:
+        webhook_ip = dict_get_value(request.json_body, ['metadata', 'ip'])
+    except Exception:
+        webhook_ip = None
 
     log_dict.update({
-        'remoteAddr'     : webhook_remote_addr if webhook_remote_addr else forward_ip or client_ip,
+        'remoteAddr'     : webhook_ip if webhook_ip else forward_ip or client_ip,
         'platform'       : request.headers.get('x-oice-platform', 'unknown'),
         'platformVersion': request.headers.get('x-oice-platform-version'),
         'browser'        : request.headers.get('x-oice-browser'),
