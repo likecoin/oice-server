@@ -570,7 +570,10 @@ def build_oice(request):
 @oice_build_all.get(permission='admin_set')
 def build_all_oice(request):
     oices = DBSession.query(Oice) \
-            .filter(Oice.sharing_option == 0) \
+            .filter_by(
+                Oice.sharing_option == 0,
+                Oice.state == 2,
+            ) \
             .all()
 
     batchId = uuid.uuid4().hex
