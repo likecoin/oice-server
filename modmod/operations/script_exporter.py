@@ -249,11 +249,13 @@ class ScriptExporter(object):
         project_dir = tempfile.mkdtemp()
         data_dir = os.path.join(project_dir, 'data')
         scenario_dir = os.path.join(data_dir, 'scenario')
+        plugin_dir = os.path.join(project_dir, 'plugin')
 
         file_parent_dir = os.path.dirname(os.path.abspath(__file__))
         template_dir = os.path.abspath(os.path.join(file_parent_dir, '..', 'res', 'novelspherejs', 'template_project'))
 
         shutil.copytree(os.path.join(template_dir, 'data'), data_dir)
+        shutil.copytree(os.path.join(template_dir, 'plugin'), plugin_dir)
 
         for folder_name in PROJECT_FOLDERS:
             create_if_not_exist(os.path.join(data_dir, folder_name))
