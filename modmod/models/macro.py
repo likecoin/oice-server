@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import relationship, validates
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import true, false
 from modmod.models.base import (
     Base,
@@ -21,6 +22,7 @@ class Macro(Base, BaseMixin):
 
     attribute_definitions = relationship("AttributeDefinition",
                                          cascade="all,delete",
+                                         order_by='AttributeDefinition.order',
                                          backref="macro",
                                          lazy="select")
     macro_type = sa.Column(sa.Unicode(1024), server_default='system')
@@ -48,6 +50,20 @@ class Macro(Base, BaseMixin):
             return tagname
 
 
+class MacroFactory(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    def __getitem__(self, key):
+        macro = MacroQuery(DBSession).get_by_id(key)
+
+        if not macro:
+            raise NoResultFound('ERR_MACRO_NOT_FOUND')
+
+        return macro
+
+
 class MacroQuery:
 
     def __init__(self, session=DBSession):
@@ -58,6 +74,6 @@ class MacroQuery:
 
     def get_by_id(self, macro_id):
         macro = self.session.query(Macro) \
-                         .filter(Macro.id == macro_id) \
-                         .one()
+                            .filter(Macro.id == macro_id) \
+                            .one_or_none()
         return macro
