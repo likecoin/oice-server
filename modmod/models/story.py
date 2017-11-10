@@ -189,12 +189,17 @@ class Story(Base, BaseMixin):
     def get_complementary_language(self, language):
         _language = None
 
-        if language[:2] == 'zh':
+        if self.is_supported_language(language):
+            _language = language
+        elif language[:2] == 'zh':
             # Try to find supported Chinese language
             _language = next((lang for lang in ['zh-HK', 'zh-TW', 'zh-CN'] if self.is_supported_language(lang)), None)
 
-        if _language is None and self.is_supported_language('en'):
-            _language = 'en'
+        if _language is None:
+            if self.is_supported_language('en'):
+                _language = 'en'
+            else:
+                _language = self.language
 
         return _language
 
