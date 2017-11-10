@@ -41,7 +41,7 @@ class User(Base, BaseMixin):
     customer_id = sa.Column(sa.Unicode(128), nullable=True, unique=True)
     stripe_access_token = sa.Column(sa.Unicode(128), nullable=True, unique=True)
     stripe_refresh_token = sa.Column(sa.Unicode(128), nullable=True, unique=True)
-    stripe_account_id = sa.Column(sa.Unicode(128), nullable=True, unique=True)
+    stripe_account_id = sa.Column(sa.Unicode(128), nullable=True, unique=False)
     android_original_transaction_id = sa.Column(sa.Unicode(128), nullable=True, unique=True)
     ios_original_transaction_id = sa.Column(sa.Unicode(128), nullable=True, unique=True)
     expire_date = sa.Column(sa.DateTime, nullable=True)
