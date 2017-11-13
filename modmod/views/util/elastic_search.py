@@ -64,6 +64,11 @@ def do_elastic_search_user(prefix):
                                 'query': ELASTIC_SEARCH_OBJ['server'],
                                 'fields': ['server']
                             }
+                        },
+                        {
+                            'query_string': {
+                                'query': 'email:*@*'
+                            }
                         }
                     ]
                 }
