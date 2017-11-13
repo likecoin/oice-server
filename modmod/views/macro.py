@@ -62,7 +62,7 @@ def add_macro(request):
         }
 
 
-@api_macro_id.get(permission='get')
+@api_macro_id.get()
 def macro_detail(request):
     macro = request.context
 
