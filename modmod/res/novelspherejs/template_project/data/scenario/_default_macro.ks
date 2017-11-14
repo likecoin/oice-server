@@ -97,7 +97,7 @@ Tag.actions.oice_request = new TagAction({
 });
 [o2_endscript]
 
-@o2_loadplugin module="latin_text_wrap.js?v=1"
+@o2_loadplugin module="latin_text_wrap.min.js?v=1"
 @toggle_latin_text_wrap layer="message0" page="fore"
 
 
