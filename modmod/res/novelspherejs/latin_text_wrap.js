@@ -27,13 +27,13 @@ class LatinTextWrap extends TextCustomizer {
             let _text = this.newTexts[i];
             _text.rect.x = _x;
             _text.rect.y = _y;
-  
+
             _x = _text.rect.x + _text.rect.width;
           }
         }
 
-        const isLatin = /[A-zÀ-ÖØ-öø-ÿ]/i.test(text.text);
-        if (isLatin) {
+        const isWordCharacter = /[a-zA-Z0-9.,'"?!$#%()@;，、。？！：；《》「」『』À-ÖØ-öø-ÿ]/i.test(text.text);
+        if (isWordCharacter) {
           word += text.text;
         } else {
           word = '';
