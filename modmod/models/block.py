@@ -48,6 +48,15 @@ class Block(Base, BaseMixin):
             'attributes': self.serialize_attributes(language)
         }
 
+    def serialize_min(self):
+        return {
+            'id': self.id,
+            'oiceId': self.oice_id,
+            'macroId': self.macro_id,
+            'macroName': self.macro.tagname,
+            'order': self.position,
+        }
+
     def serialize_attributes(self, language=None):
         if not language:
             language = self.oice.story.language
