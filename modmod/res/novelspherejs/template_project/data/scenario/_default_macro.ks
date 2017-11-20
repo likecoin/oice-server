@@ -128,6 +128,11 @@ Tag.actions.oice_request = new TagAction({
 [endmacro]
 
 
+[macro name=resetdelay]
+@delay speed=&config.chSpeeds
+[endmacro]
+
+
 ;Dialog
 ;======
 [macro name=keyword]

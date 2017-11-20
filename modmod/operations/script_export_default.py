@@ -5,7 +5,7 @@ NOVELSPHERE_CONFIG = {
     'scWidth': SCREEN_SIZE,
     'scHeight': SCREEN_SIZE,
     'gameID': None,
-    'chSpeeds': 30,
+    'chSpeeds': 10,
     'numImageLayers': 5,
     'numMessageLayers': 4,
     'numSEBuffers': 3,
