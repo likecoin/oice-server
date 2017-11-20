@@ -462,6 +462,9 @@ def stripe_generic_error(exc, request):
 
 @view_config(context=Exception, renderer='json')
 def general_error(exc, request):
+    if not is_production:
+        raise exc
+
     code = 500
     message = str(exc)
     request.response.status_code = code
