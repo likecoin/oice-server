@@ -45,6 +45,10 @@ class AttributeDefinition(Base, BaseMixin):
     def is_asset(self):
         return self.asset_type == "reference"
 
+    @property
+    def asset_type_key(self):
+        return self.asset_type_ref.folder_name if self.asset_type_ref else None
+
     @validates('name')
     def validate_name(self, key, name):
         if not name:
