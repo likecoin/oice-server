@@ -292,6 +292,16 @@ if (!tf._characterdialog) {
 
 ;角色进场处理
 ;---------
+[o2_iscript]
+if (!tf._prevLeftCharacterShouldDim) {
+    tf._prevLeftCharacterShouldDim = {};
+}
+if (!tf._prevLeftCharacterShouldMove) {
+    tf._prevLeftCharacterShouldMove = {};
+}
+[o2_endscript]
+
+
 [macro name=fgLeft]
 ;显示左边的人物图像，参数需要storage，top，left，fliplr（默认=0，不翻转）
 [layopt layer=1 index=100]
@@ -301,10 +311,21 @@ if (!tf._characterdialog) {
 [trans time=200]
 [wt canskip=true]
 
-@eval o2_exp="tf._prevLeftCharacterShouldDim = mp.dim === 'true'"
-@eval o2_exp="tf._prevLeftCharacterShouldMove = mp.move === 'true'"
+[o2_iscript]
+tf._prevLeftCharacterShouldDim[mp.key] = mp.dim === 'true';
+tf._prevLeftCharacterShouldMove[mp.key] = mp.move === 'true';
+[o2_endscript]
 
 [endmacro]
+
+[o2_iscript]
+if (!tf._prevRightCharacterShouldDim) {
+    tf._prevRightCharacterShouldDim = {};
+}
+if (!tf._prevRightCharacterShouldMove) {
+    tf._prevRightCharacterShouldMove = {};
+}
+[o2_endscript]
 
 [macro name=fgRight]
 ;显示右边的人物图像，参数需要storage，top，left，fliplr（默认=1，翻转）
@@ -315,8 +336,11 @@ if (!tf._characterdialog) {
 [trans time=200]
 [wt canskip=true]
 
-@eval o2_exp="tf._prevRightCharacterShouldDim = mp.dim === 'true'"
-@eval o2_exp="tf._prevRightCharacterShouldMove = mp.move === 'true'"
+
+[o2_iscript]
+tf._prevRightCharacterShouldDim[mp.key] = mp.dim === 'true';
+tf._prevRightCharacterShouldMove[mp.key] = mp.move === 'true';
+[o2_endscript]
 
 [endmacro]
 
@@ -345,7 +369,7 @@ if (!tf._characterdialog) {
 [else]
 @stoptrans
 
-@eval o2_exp="tf._fgLeftToDark_mopacity = tf._prevLeftCharacterShouldDim ? 172 : 0"
+@eval o2_exp="tf._fgLeftToDark_mopacity = tf._prevLeftCharacterShouldDim[mp.key] ? 172 : 0"
 [image storage=%storage
        layer=1
        page=fore
@@ -359,7 +383,7 @@ if (!tf._characterdialog) {
 
 @wait time=50
 
-@move layer=1 path=%path time=140 o2_cond="tf._prevLeftCharacterShouldMove"
+@move layer=1 path=%path time=140 o2_cond="tf._prevLeftCharacterShouldMove[mp.key]"
 
 @layopt layer=1 index=5
 @layopt layer=2 index=20
@@ -381,7 +405,7 @@ if (!tf._characterdialog) {
 [else]
 @stoptrans
 
-@eval o2_exp="tf._fgRightToDark_mopacity = tf._prevRightCharacterShouldDim ? 172 : 0"
+@eval o2_exp="tf._fgRightToDark_mopacity = tf._prevRightCharacterShouldDim[mp.key] ? 172 : 0"
 [image storage=%storage
        layer=2
        page=fore
@@ -395,7 +419,7 @@ if (!tf._characterdialog) {
 
 @wait time=50
 
-@move layer=2 path=%path time=140 o2_cond="tf._prevRightCharacterShouldMove"
+@move layer=2 path=%path time=140 o2_cond="tf._prevRightCharacterShouldMove[mp.key]"
 
 @layopt layer=1 index=10
 @layopt layer=2 index=5
@@ -411,13 +435,27 @@ if (!tf._characterdialog) {
 ;path=npcdata的pathl的值，是人物变亮并移动的目的地路径；
 ;例如:pathl=(-110,-90,255)，第三个参数是透明度，这里固定填255；
 @stoptrans
+
+[if o2_exp="tf._prevLeftCharacterShouldMove[mp.key]"]
 @image storage=%storage layer=1 page=fore top=%top|0 left=%left|0 visible=true fliplr=%fliplr|0
+[else]
+@image storage=%storage layer=1 page=fore visible=true fliplr=%fliplr|0
+[endif]
+
 @wait time=50
-@move layer=1 path=%path time=140
+
+@move layer=1 path=%path time=140 o2_cond="tf._prevLeftCharacterShouldMove[mp.key]"
+
 @layopt layer=1 index=25
 @layopt layer=2 index=20
 @layopt layer=3 index=30
 @wm
+
+[o2_iscript]
+tf._prevLeftCharacterShouldDim[mp.key] = mp.dim === 'true';
+tf._prevLeftCharacterShouldMove[mp.key] = mp.move === 'true';
+[o2_endscript]
+
 [endmacro]
 
 [macro name=fgRightToBright]
@@ -425,14 +463,29 @@ if (!tf._characterdialog) {
 ;path=npcdata的pathr的值，是人物变亮并移动的目的地路径；
 ;例如:pathr=(-110,-90,255)，第三个参数是透明度，这里固定填255；
 @stoptrans
+
+[if o2_exp="tf._prevRightCharacterShouldMove[mp.key]"]
 @image storage=%storage layer=2 page=fore top=%top|0 left=%left|0 visible=true fliplr=%fliplr|1
+[else]
+@image storage=%storage layer=2 page=fore visible=true fliplr=%fliplr|1
+[endif]
+
 @wait time=50
-@move layer=2 path=%path time=140
+
+@move layer=2 path=%path time=140 o2_cond="tf._prevRightCharacterShouldMove[mp.key]"
+
 @layopt layer=1 index=10
 @layopt layer=2 index=20
 @layopt layer=3 index=30
 @wm
+
+[o2_iscript]
+tf._prevRightCharacterShouldDim[mp.key] = mp.dim === 'true';
+tf._prevRightCharacterShouldMove[mp.key] = mp.move === 'true';
+[o2_endscript]
+
 [endmacro]
+
 
 ;角色退场处理
 ;---------

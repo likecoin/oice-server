@@ -333,6 +333,8 @@ class ScriptVisitor(object):
         character = character_scene.character
         script = ""
         to_bright = False
+        is_dim = str(is_dim).lower()
+        is_move = str(is_move).lower()
         two_sides = ['left', 'right']
         if position in two_sides:
             if self._cs_map['middle']:
@@ -362,7 +364,7 @@ class ScriptVisitor(object):
                         self._cs_map[scene_pos])
 
         if to_bright:
-            script += self._fg_bright(position, character_scene)
+            script += self._fg_bright(position, character_scene, is_dim, is_move)
         else:
             script += self._fg_show(position, character_scene, is_dim, is_move)
 
@@ -370,7 +372,7 @@ class ScriptVisitor(object):
 
         return script
 
-    def _fg_show(self, position, character_scene, is_dim=True, is_move=True):
+    def _fg_show(self, position, character_scene, is_dim='true', is_move='true'):
         character_scene.dark = False
 
         character = character_scene.character
@@ -380,8 +382,8 @@ class ScriptVisitor(object):
         script = character_script_data.fg_show[position] % {
             'key': character.uuid,
             'fg': fg.accept(self) if fg else '',
-            'dim': str(is_dim).lower(),
-            'move': str(is_move).lower(),
+            'dim': is_dim,
+            'move': is_move,
         }
 
         if fliplr is not None:
@@ -406,7 +408,7 @@ class ScriptVisitor(object):
 
         return script + "\n"
 
-    def _fg_bright(self, position, character_scene):
+    def _fg_bright(self, position, character_scene, is_dim='true', is_move='true'):
         character_scene.dark = False
 
         character = character_scene.character
@@ -415,7 +417,9 @@ class ScriptVisitor(object):
 
         script = character_script_data.fg_to_bright[position] % {
             'key': character.uuid,
-            'fg': fg.accept(self) if fg else ''
+            'fg': fg.accept(self) if fg else '',
+            'dim': is_dim,
+            'move': is_move,
         }
 
         if fliplr is not None:
