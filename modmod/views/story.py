@@ -568,7 +568,7 @@ def get_app_story_progress(request):
     already_read_oice_ids = set(p.oice_id for p in progress)
 
     try:
-        oice = next(o for o in story.oice if o.id not in already_read_oice_ids and o.is_public() and o.has_published)
+        oice = next(o for o in story.published_oices if o.id not in already_read_oice_ids)
     except StopIteration:
         # Return last viewed oice if all oices have read and the last viewed oice is not the last episode
         # otherwise, return the first episode of the story instead
@@ -588,10 +588,23 @@ def get_app_story_episodes(request):
     story = request.context
     query_language = normalize_language(request.GET.get('language'))
 
-    already_viewed_oice_ids = None
+    viewable_oice_ids = set()
     if user:
         progress = UserReadOiceProgressQuery(DBSession).fetch_by_user_id_and_story(user.id, story)
-        already_viewed_oice_ids = set(p.oice_id for p in progress)
+        already_read_oice_ids = set()
+
+        for p in progress:
+            viewable_oice_ids.add(p.oice_id)
+            if p.is_finished:
+                already_read_oice_ids.add(p.oice_id)
+
+        # When user finished reading some episodes and haven't start the next episode
+        if len(viewable_oice_ids - already_read_oice_ids) == 0:
+            try:
+                next_viewable_oice = next(o for o in story.published_oices if o.id not in viewable_oice_ids)
+                viewable_oice_ids.add(next_viewable_oice.id)
+            except StopIteration:
+                pass
 
     return {
         'code': 200,
@@ -600,8 +613,8 @@ def get_app_story_episodes(request):
         'oices': [
             {
                 **o.serialize_profile(query_language),
-                'viewable': o.id in already_viewed_oice_ids if already_viewed_oice_ids else False
+                'viewable': o.id in viewable_oice_ids if viewable_oice_ids else False
             }
-            for o in story.oice if o.is_public() and o.has_published
+            for o in story.published_oices
         ],
     }
