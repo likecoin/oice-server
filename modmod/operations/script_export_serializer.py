@@ -254,7 +254,10 @@ class ScriptVisitor(object):
         fliplr = attrs.get('fliplr', None)
         character_scene = CharacterScene(character, fg, fliplr)
 
-        script += self._display_character(position, character_scene)
+        is_dim = attrs.get('dim', False)
+        is_move = attrs.get('move', False)
+
+        script += self._display_character(position, character_scene, is_dim, is_move)
 
         is_hidden_dialog = attrs.get('hidedialog', False)
 
@@ -326,7 +329,7 @@ class ScriptVisitor(object):
         script += ScriptVisitor.print_dialog_text(dialog_text)
         return script + "\n"
 
-    def _display_character(self, position, character_scene):
+    def _display_character(self, position, character_scene, is_dim=True, is_move=True):
         character = character_scene.character
         script = ""
         to_bright = False
@@ -361,13 +364,13 @@ class ScriptVisitor(object):
         if to_bright:
             script += self._fg_bright(position, character_scene)
         else:
-            script += self._fg_show(position, character_scene)
+            script += self._fg_show(position, character_scene, is_dim, is_move)
 
         self._cs_map[position] = character_scene
 
         return script
 
-    def _fg_show(self, position, character_scene):
+    def _fg_show(self, position, character_scene, is_dim=True, is_move=True):
         character_scene.dark = False
 
         character = character_scene.character
@@ -376,7 +379,9 @@ class ScriptVisitor(object):
 
         script = character_script_data.fg_show[position] % {
             'key': character.uuid,
-            'fg': fg.accept(self) if fg else ''
+            'fg': fg.accept(self) if fg else '',
+            'dim': str(is_dim).lower(),
+            'move': str(is_move).lower(),
         }
 
         if fliplr is not None:

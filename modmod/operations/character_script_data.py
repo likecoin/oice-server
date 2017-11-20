@@ -1,9 +1,9 @@
 # pylama:ignore=E501
 
 fg_show = {
-    "left": """@fgLeft storage="%(fg)s" left="&ch['%(key)s'].xl" top="&ch['%(key)s'].yl\"""",
-    "right": """@fgRight storage="%(fg)s" left="&ch['%(key)s'].xr" top="&ch['%(key)s'].yr\"""",
-    "middle": """@fgMiddle storage="%(fg)s" left="&ch['%(key)s'].xm" top="&ch['%(key)s'].ym\""""
+    "left": '''@fgLeft storage="%(fg)s" left="&ch['%(key)s'].xl" top="&ch['%(key)s'].yl" move="%(move)s" dim="%(dim)s"''',
+    "right": '''@fgRight storage="%(fg)s" left="&ch['%(key)s'].xr" top="&ch['%(key)s'].yr" move="%(move)s" dim="%(dim)s"''',
+    "middle": '''@fgMiddle storage="%(fg)s" left="&ch['%(key)s'].xm" top="&ch['%(key)s'].ym"'''
 }
 
 fg_to_bright = {

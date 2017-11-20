@@ -295,6 +295,10 @@ if (!tf._characterdialog) {
 [layopt layer=1 index=100]
 [trans time=200]
 [wt canskip=true]
+
+@eval o2_exp="tf._prevLeftCharacterShouldDim = mp.dim === 'true'"
+@eval o2_exp="tf._prevLeftCharacterShouldMove = mp.move === 'true'"
+
 [endmacro]
 
 [macro name=fgRight]
@@ -305,6 +309,10 @@ if (!tf._characterdialog) {
 [layopt layer=2 index=200]
 [trans time=200]
 [wt canskip=true]
+
+@eval o2_exp="tf._prevRightCharacterShouldDim = mp.dim === 'true'"
+@eval o2_exp="tf._prevRightCharacterShouldMove = mp.move === 'true'"
+
 [endmacro]
 
 [macro name=fgMiddle]
@@ -319,43 +327,79 @@ if (!tf._characterdialog) {
 
 ;角色对话变换的立绘移位处理
 ;--------------------
+
+
 [macro name=fgLeftToDark]
 ;显示左边变暗过程，参数需要storage，path，fliplr
 ;path=npcdata的pathDl的值，是人物变暗并移动的目的地路径；
 ;例如:pathDl=(-110,-90,255)，第三个参数是透明度，这里固定填255；
 ;mopacity="172"，是人物变暗的尺度，固化数值，不给用户修改；
+
 [if o2_exp="tf._hasJumped"]
 @eval o2_exp="tf._hasJumped = false"
 [else]
 @stoptrans
-@image storage=%storage layer=1 page=fore top=%top|0 left=%left|0 visible=true mcolor=0x000000 mopacity=172 fliplr=%fliplr|0
+
+@eval o2_exp="tf._fgLeftToDark_mopacity = tf._prevLeftCharacterShouldDim ? 172 : 0"
+[image storage=%storage
+       layer=1
+       page=fore
+       top=%top|0
+       left=%left|0
+       visible=true
+       mcolor=0x000000
+       mopacity=&tf._fgLeftToDark_mopacity
+       fliplr=%fliplr|0
+]
+
 @wait time=50
-@move layer=1 path=%path time=140
+
+@move layer=1 path=%path time=140 o2_cond="tf._prevLeftCharacterShouldMove"
+
 @layopt layer=1 index=5
 @layopt layer=2 index=20
 @layopt layer=3 index=30
 @wm canskip=true
+
 [endif]
 [endmacro]
+
 
 [macro name=fgRightToDark]
 ;显示右边变暗过程，参数需要storage，path，fliplr
 ;path=npcdata的pathDr的值，是人物变暗并移动的目的地路径；
 ;例如:pathDr=(-110,-90,255)，第三个参数是透明度，这里固定填255；
 ;mopacity="172"，是人物变暗的尺度，固化数值，不给用户修改；
+
 [if o2_exp="tf._hasJumped"]
 @eval o2_exp="tf._hasJumped = false"
 [else]
 @stoptrans
-@image storage=%storage layer=2 page=fore top=%top|0 left=%left|0 visible=true mcolor=0x000000 mopacity=172 fliplr=%fliplr|1
+
+@eval o2_exp="tf._fgRightToDark_mopacity = tf._prevRightCharacterShouldDim ? 172 : 0"
+[image storage=%storage
+       layer=2
+       page=fore
+       top=%top|0
+       left=%left|0
+       visible=true
+       mcolor=0x000000
+       mopacity=&tf._fgRightToDark_mopacity
+       fliplr=%fliplr|1
+]
+
 @wait time=50
-@move layer=2 path=%path time=140
+
+@move layer=2 path=%path time=140 o2_cond="tf._prevRightCharacterShouldMove"
+
 @layopt layer=1 index=10
 @layopt layer=2 index=5
 @layopt layer=3 index=30
 @wm canskip=true
+
 [endif]
 [endmacro]
+
 
 [macro name=fgLeftToBright]
 ;显示左边变亮过程，参数需要storage，path，fliplr
