@@ -69,12 +69,7 @@ Seed
 
 Suggested Dev Setup
 -------------------
-- modify your /etc/hosts to map modmod.dev to 127.0.0.1
-- Use nginx as reserve proxy, example see `nginx.conf.example`. Ensure the nginx
-  version support ws upgrade. i.e. 1.3+
-- Use supervisord to open all the services, example see `supervisord.conf.sample`
-    - please note that supervisord is py2, you need a separate virtualenv.
-- You may `tail -f logs/*` for monitor log
+- Please refer to [oice repository](https://github.com/lakoo/oice-deployment) README.md
 
 ## Building docker image for use in oice/kubernetes
 ```bash
