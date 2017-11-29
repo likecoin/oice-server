@@ -28,7 +28,8 @@ class StoryLocalization(Base, BaseMixin):
 
     @property
     def cover_storage_url(self):
-        return get_upload_base_url() + self.cover_storage.url if self.cover_storage else None
+        return get_upload_base_url() + self.cover_storage.url if self.cover_storage \
+                else self.story.cover_storage_url
 
     @property
     def cover_url_obj(self):
