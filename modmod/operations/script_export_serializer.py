@@ -23,13 +23,17 @@ class ScriptVisitor(object):
             character.id: character
             for character in characters
         }
-        # character sence map
+        self.scale_factor = scale_factor
+        self._initialize_oice()
+
+    def _initialize_oice(self):
+        # Need to reset before visiting oice
+        # Character sence map
         self._cs_map = {
             'left': None,
             'middle': None,
             'right': None
         }
-        self.scale_factor = scale_factor
         self.autoplay = False
         self.prev_character = None
         self.prev_character_name = None
@@ -447,6 +451,7 @@ class ScriptVisitor(object):
         return asset.export_filename
 
     def visit_oice(self, oice, language):
+        self._initialize_oice()
         script = ''
 
         for block in oice.blocks:
