@@ -173,7 +173,7 @@ def login_user(request):
         user.last_login_at = datetime.datetime.utcnow()
 
         if not user.is_anonymous:
-            sample_story = StoryQuery(DBSession).get_sample_story();
+            sample_story = StoryQuery(DBSession).get_sample_story(user.language);
             story = next((user_story for user_story in user.stories if sample_story.id == user_story.fork_of), None)
             if not story:
                 story = fork_story(DBSession, sample_story)
@@ -235,7 +235,7 @@ def login_user(request):
         if display_name:
             user.display_name = display_name
 
-        sample_story = StoryQuery(DBSession).get_sample_story();
+        sample_story = StoryQuery(DBSession).get_sample_story(normalized_language);
         story = fork_story(DBSession, sample_story)
         sample_oice = OiceQuery(DBSession).get_sample_oice(language=normalized_language);
         oice = fork_oice(DBSession, story, sample_oice)

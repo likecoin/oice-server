@@ -69,8 +69,16 @@ class Story(Base, BaseMixin):
         return acl
 
     @staticmethod
-    def get_sample_story_id():
-        return 492
+    def get_sample_story_id(language=None):
+        story_id = 13889
+
+        if language:
+            if language[:2] == 'zh':
+                story_id = 492
+            elif language[:2] == 'ja':
+                story_id = 13890
+
+        return story_id
 
     @property
     def is_fork_from_sample_story(self):
@@ -300,8 +308,8 @@ class StoryQuery:
         return self.query.filter(Story.id.in_(story_ids))\
             .all()
 
-    def get_sample_story(self):
-        return self.get_story_by_id(Story.get_sample_story_id())
+    def get_sample_story(self, language=None):
+        return self.get_story_by_id(Story.get_sample_story_id(language))
 
     def get_stories_by_language(self, language=None, filtered_ids=None, before_time=None, limit=10):
         query = self.query

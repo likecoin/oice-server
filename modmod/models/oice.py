@@ -302,12 +302,12 @@ class OiceQuery:
                    .one_or_none()
 
     def get_sample_oice(self, language=None):
-        oice_id = 10261
+        oice_id = 11261
 
         if language:
             if language[:2] == 'zh':
                 oice_id = 1055
             elif language[:2] == 'ja':
-                oice_id = 10260
+                oice_id = 11260
 
         return self.get_by_id(oice_id)
