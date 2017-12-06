@@ -3,6 +3,7 @@ class LatinTextWrap extends TextCustomizer {
     super(textLayer, oldTexts, newTexts);
     this.textLayer = textLayer;
     this.newTexts = newTexts;
+    this.wordRegex = /[a-zA-Z0-9.,'"?!$#%()@;，、。？！：；《》「」『』À-ÖØ-öø-ÿ]/i;
   }
 
   perform() {
@@ -15,16 +16,21 @@ class LatinTextWrap extends TextCustomizer {
       let _x = this.textLayer.textCursor.x;
       let _y = this.textLayer.textCursor.y;
 
-      this.newTexts.forEach((text, index) => {
-        if (_x > lineWidth) {
+      this.newTexts.forEach((text, index, texts) => {
+        const isWordCharacter = this.wordRegex.test(text.text);
 
+        if (_x > lineWidth) {
           // Set position to new line
           _x = margin.left;
           _y += this.textLayer.lastLineSize + this.textLayer.style.lineSpacing;
 
-          // Move word to new line
-          for (let i = index - word.length; i < index; i++) {
-            let _text = this.newTexts[i];
+          // For English, move the whole word to new line
+          // For avoiding any leading punctuation in Chinese and Japanese,
+          // move the previous character to new line only
+          const textsToBeMoved = (index > 0 && isWordCharacter && word.length === 0) ? texts[index - 1].text : word;
+          for (let i = index - textsToBeMoved.length; i < index; i++) {
+            let _text = texts[i];
+
             _text.rect.x = _x;
             _text.rect.y = _y;
 
@@ -32,11 +38,8 @@ class LatinTextWrap extends TextCustomizer {
           }
         }
 
-        const isWordCharacter = /[a-zA-Z0-9.,'"?!$#%()@;，、。？！：；《》「」『』À-ÖØ-öø-ÿ]/i.test(text.text);
         if (isWordCharacter) {
           word += text.text;
-        } else if (!/\s/i.test(text.text)) {
-          word = text.text;
         } else {
           word = '';
         }
