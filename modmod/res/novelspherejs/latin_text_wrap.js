@@ -35,6 +35,8 @@ class LatinTextWrap extends TextCustomizer {
         const isWordCharacter = /[a-zA-Z0-9.,'"?!$#%()@;，、。？！：；《》「」『』À-ÖØ-öø-ÿ]/i.test(text.text);
         if (isWordCharacter) {
           word += text.text;
+        } else if (!/\s/i.test(text.text)) {
+          word = text.text;
         } else {
           word = '';
         }
