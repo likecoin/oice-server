@@ -143,6 +143,11 @@ oice_fork = Service(name='oice_fork',
                    renderer='json',
                    factory=OiceFactory,
                    traverse='/{oice_id}')
+oice_fork_user = Service(name='oice_fork_user',
+                    path='oice/{oice_id}/fork/user/{user_id}',
+                    renderer='json',
+                    factory=OiceFactory,
+                    traverse='/{oice_id}')
 oice_copy = Service(name='oice_copy',
                     path='oice/{oice_id}/copy',
                     renderer='json',
@@ -622,25 +627,33 @@ def preview_oice(request):
     }
 
 
-@oice_fork.post()
-def fork_oice(request):
+def fork_oice(oice, user):
 
-    oice = request.context
-    story_id = oice.story_id
+    story = oice.story
+
+    forked_story = next((user_story for user_story in user.stories if oice.story_id == user_story.fork_of), None)
+    fork_serial_number = 0
+
+    if not forked_story:
+        is_self_forking = story in user.stories
+        forked_story = do_fork_story(DBSession, story, is_self_forking)
+        user.stories.append(forked_story)
+    else:
+        fork_serial_number = sum(1 for o in forked_story.oice if oice.id == o.fork_of)
+
+    new_oice = do_fork_oice(DBSession, forked_story, oice, fork_serial_number)
+
+    return new_oice
+
+@oice_fork.post()
+def fork_oice_user(request):
+
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
     if not user:
         raise HTTPForbidden
 
-    story = oice.story
-    forked_story = next((user_story for user_story in user.stories if story_id == user_story.fork_of), None)
-    fork_serial_number = 0
-    if not forked_story:
-        is_self_forking = story in user.stories
-        forked_story = do_fork_story(DBSession, story, is_self_forking)
-        forked_story.users = [user]
-    else:
-        fork_serial_number = sum(1 for o in forked_story.oice if oice.id == o.fork_of)
-    new_oice = do_fork_oice(DBSession, forked_story, oice, fork_serial_number)
+    oice = request.context
+    new_oice = fork_oice(oice, user)
 
     log_dict = {
         'action': 'forkOice',
@@ -654,6 +667,7 @@ def fork_oice(request):
     log_dict = set_basic_info_oice_log(user, new_oice, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_OICE, log_dict)
+
     return {
         'message': 'ok',
         'oice': new_oice.serialize(language=fetch_oice_query_language(request, oice))
@@ -844,4 +858,20 @@ def post_translate(request):
         "code": 200,
         "message": "ok",
         "oice": oice.serialize(language=target_language),
+    }
+
+
+@oice_fork_user.post(permission='admin_set')
+def fork_oice_admin(request):
+
+    user_id = request.matchdict['user_id']
+    user = UserQuery(DBSession).get_user_by_id(user_id)
+    if not user:
+        raise HTTPForbidden
+
+    oice = request.context
+
+    return {
+        'message': 'ok',
+        'oice': fork_oice(oice, user).serialize(language=fetch_oice_query_language(request, oice)),
     }
