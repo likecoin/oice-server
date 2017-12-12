@@ -316,6 +316,10 @@ tf._prevLeftCharacterShouldDim[mp.key] = mp.dim === 'true';
 tf._prevLeftCharacterShouldMove[mp.key] = mp.move === 'true';
 [o2_endscript]
 
+[if o2_exp="tf._hasJumped"]
+@eval o2_exp="tf._hasJumped = false"
+[endif]
+
 [endmacro]
 
 [o2_iscript]
@@ -336,11 +340,14 @@ if (!tf._prevRightCharacterShouldMove) {
 [trans time=200]
 [wt canskip=true]
 
-
 [o2_iscript]
 tf._prevRightCharacterShouldDim[mp.key] = mp.dim === 'true';
 tf._prevRightCharacterShouldMove[mp.key] = mp.move === 'true';
 [o2_endscript]
+
+[if o2_exp="tf._hasJumped"]
+@eval o2_exp="tf._hasJumped = false"
+[endif]
 
 [endmacro]
 
@@ -352,6 +359,11 @@ tf._prevRightCharacterShouldMove[mp.key] = mp.move === 'true';
 [layopt layer=3 index=300]
 [trans time=200]
 [wt canskip=true]
+
+[if o2_exp="tf._hasJumped"]
+@eval o2_exp="tf._hasJumped = false"
+[endif]
+
 [endmacro]
 
 ;角色对话变换的立绘移位处理
