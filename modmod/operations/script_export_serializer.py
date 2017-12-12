@@ -50,6 +50,10 @@ class ScriptVisitor(object):
 
     def visit_default_block(self, block, language):
         script = "@" + block.macro.tagname
+
+        if block.macro.tagname == 'clearmessage':
+            self.prev_character_name = None
+
         for attr in block.attributes:
             if attr.attribute_definition.attribute_name in script_export_default.SCALABLE_ATTRIBUTES:
                 if attr.value:
@@ -433,6 +437,7 @@ class ScriptVisitor(object):
 
     def _fg_exit(self, position, character_scene):
         self._cs_map[position] = None
+        self.prev_character = None
         return character_script_data.fg_exit[position] + "\n"
 
     def visit_attribute(self, attribute, language):
