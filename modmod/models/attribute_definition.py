@@ -47,7 +47,7 @@ class AttributeDefinition(Base, BaseMixin):
 
     @property
     def asset_type_key(self):
-        return self.asset_type_ref.folder_name if self.asset_type_ref else None
+        return self.asset_type_ref.folder_name if self.asset_type_ref else 'none'
 
     @validates('name')
     def validate_name(self, key, name):

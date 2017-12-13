@@ -50,6 +50,10 @@ class ScriptVisitor(object):
 
     def visit_default_block(self, block, language):
         script = "@" + block.macro.tagname
+
+        if block.macro.tagname == 'clearmessage':
+            self.prev_character_name = None
+
         for attr in block.attributes:
             if attr.attribute_definition.attribute_name in script_export_default.SCALABLE_ATTRIBUTES:
                 if attr.value:
@@ -215,15 +219,16 @@ class ScriptVisitor(object):
         attrs = block.get_localized_attributes(language)
 
         name = attrs.get('name', None)
+        if self.prev_character_name != name:
+            self.prev_character_name = name
+
         full_screen = bool(attrs.get('fullscreen'))
 
         script = ''
 
         # Display name
         if not full_screen and name:
-            if self.prev_character_name != name:
-                self.prev_character_name = name
-                script += '@charactername name="%s"\n' % name
+            script += '@charactername name="%s"\n' % name
         else:
             script += '@asideTalk\n'
 
@@ -433,6 +438,7 @@ class ScriptVisitor(object):
 
     def _fg_exit(self, position, character_scene):
         self._cs_map[position] = None
+        self.prev_character = None
         return character_script_data.fg_exit[position] + "\n"
 
     def visit_attribute(self, attribute, language):
