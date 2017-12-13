@@ -219,15 +219,16 @@ class ScriptVisitor(object):
         attrs = block.get_localized_attributes(language)
 
         name = attrs.get('name', None)
+        if self.prev_character_name != name:
+            self.prev_character_name = name
+
         full_screen = bool(attrs.get('fullscreen'))
 
         script = ''
 
         # Display name
         if not full_screen and name:
-            if self.prev_character_name != name:
-                self.prev_character_name = name
-                script += '@charactername name="%s"\n' % name
+            script += '@charactername name="%s"\n' % name
         else:
             script += '@asideTalk\n'
 
