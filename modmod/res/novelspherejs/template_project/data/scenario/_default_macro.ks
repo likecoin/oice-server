@@ -99,6 +99,7 @@ Tag.actions.oice_request = new TagAction({
 
 @o2_loadplugin module="latin_text_wrap.min.js?v=1"
 @toggle_latin_text_wrap layer="message0" page="fore"
+@toggle_latin_text_wrap layer="message2" page="fore"
 
 
 ;Play Behavior
@@ -654,8 +655,13 @@ OptionButton.prototype.drawOnContext = function (context) {
 
     context.textBaseline = "top";
 
+    /**
+     * For English, move the whole word to new line
+     * For avoiding any leading punctuation in Chinese and Japanese,
+     */
+    var exceptionRegex = /[a-zA-Z0-9.,'"?!$#%()@;，、。？！：；《》「」『』À-ÖØ-öø-ÿ]/i;
     var lines = [texts.text];
-    for (i = 0; i < this.text.length; i++) {        
+    for (i = 0; i < this.text.length; i++) {
         // Concat each character and measure the text size
         texts.text = lines[lines.length - 1] += this.text[i];
         var textSize = texts.measure(context);
@@ -663,7 +669,13 @@ OptionButton.prototype.drawOnContext = function (context) {
         // Split text into blocks
         var shouldStartNewLine = textSize.width + texts.styles.size > texts.rect.width;
         if (shouldStartNewLine) {
-            lines.push("");
+            var moveStart = i;
+            while (moveStart > 0 && exceptionRegex.test(this.text[moveStart])) {
+                moveStart--;
+            }
+            var newLine = lines[lines.length - 1].substring(moveStart).trim();
+            lines[lines.length - 1] = lines[lines.length - 1].substring(0, moveStart).trim();
+            lines.push(newLine);
         }
     }
 
