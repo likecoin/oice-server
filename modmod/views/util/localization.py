@@ -1,9 +1,17 @@
 import babel
+import re
 
 from ...config import get_default_lang
 
 
 def normalize_language(language):
+    # handle zh-XX_#Hanx for Android 7.0+ and zh-Hant-HK for iOS 11
+    is_special_chinese_locale = 'zh' in language and bool(re.findall(r'(Hans|Hant)', language))
+    if is_special_chinese_locale:
+        country = re.findall(r'[_-]([A-Z]{2}|[a-z]{2})', language)
+        country_code = country[0] if country else 'TW'
+        language = '{}-{}'.format('zh', country_code)
+
     if language:
         language = language.replace('_', '-')
     else:
