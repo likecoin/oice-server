@@ -6,6 +6,7 @@ jobs:
       - image: python:3-alpine
     environment:
       - CI: "true"
+      - TERM: dumb
     steps:
       - run: apk add --no-cache curl git gzip tar
       - checkout
