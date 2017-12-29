@@ -34,7 +34,15 @@ def log_message(topic, dict_msg):
         try:
             producer.produce(topic, out_message.encode('utf-8'))
     
-            producer.flush()
         except KafkaException as e: 
             log.error('Confluent kafka error: ' + str(e))
 
+def flush_producer():
+    global CONFLUENT_KAFKA_OBJ
+
+    if CONFLUENT_KAFKA_OBJ['enable']:
+        producer = CONFLUENT_KAFKA_OBJ['producer']
+        try:
+            producer.flush()
+        except KafkaException as e: 
+            log.error('kafka flush error: ' + str(e))
