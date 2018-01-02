@@ -5,6 +5,7 @@ import uuid
 import pyramid_safile
 import logging
 from pyramid.httpexceptions import HTTPForbidden
+from pyramid.response import Response
 from cornice import Service
 from modmod.exc import ValidationError
 from sqlalchemy import func, or_
@@ -436,12 +437,19 @@ def get_featured_stories(request):
     featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
                                                     .order_by(FeaturedStory.order) \
                                                     .all()
+    response = Response()
+    response.status_code = 200
+    response.cache_control.max_age = 86400
+    response.content_type = 'application/json'
+    response.charset = 'UTF-8'
 
-    return {
+    response.text = json.dumps({
         'code': 200,
         'message': 'ok',
         'stories': [fs.story.serialize_featured(language=fs_language) for fs in featured_stories],
-    }
+    })
+
+    return response
 
 
 @app_story.get()
@@ -511,12 +519,19 @@ def get_app_featured_story(request):
                                                     .order_by(FeaturedStory.tier, func.rand()) \
                                                     .all()
 
-    return {
+    response = Response()
+    response.status_code = 200
+    response.cache_control.max_age = 86400
+    response.content_type = 'application/json'
+    response.charset = 'UTF-8'
+
+    response.text = json.dumps({
         'code': 200,
         'message': 'ok',
         'stories': [fs.story.serialize_app(user, language=fs_language) for fs in featured_stories],
-    }
+    })
 
+    return response
 
 @app_story_v2.get()
 def get_app_story_list_v2(request):
