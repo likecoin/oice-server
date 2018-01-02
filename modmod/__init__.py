@@ -11,6 +11,8 @@ import stripe
 import logging
 import firebase_admin
 from firebase_admin import credentials
+import signal
+import sys
 
 from .models import (
     DBSession,
@@ -18,6 +20,10 @@ from .models import (
 )
 from .models.base import (
     Base,
+)
+
+from .views.util.confluent_kafka_log import (
+    flush_producer,
 )
 
 from .operations.worker import init_worker
@@ -43,6 +49,9 @@ def groupfinder(userid, request):
     if user:
         return ['r:' + user.role]
 
+def sigint_handler(signal, frame):
+    flush_producer()
+    sys.exit(0)
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
@@ -94,5 +103,9 @@ def main(global_config, **settings):
     if not "CI" in os.environ and os.path.isfile('secret/fbServiceAccountKey.json') :
         cred = credentials.Certificate('secret/fbServiceAccountKey.json')
         default_firebase_app = firebase_admin.initialize_app(cred)
+
+    signal.signal(signal.SIGINT, sigint_handler)
+    signal.signal(signal.SIGTERM, sigint_handler)
+    signal.signal(signal.SIGHUP, sigint_handler)
 
     return config.make_wsgi_app()
