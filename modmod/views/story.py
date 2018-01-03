@@ -445,8 +445,11 @@ def get_featured_stories(request):
     has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
     fs_language = client_language if has_fs_in_client_language else get_default_lang()
 
+    limit = request.GET.get('limit', 20)
+
     featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
                                                     .order_by(FeaturedStory.order) \
+                                                    .limit(limit) \
                                                     .all()
 
     return {
