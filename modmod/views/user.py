@@ -39,6 +39,7 @@ from ..operations.story import fork_story
 from ..operations.oice import fork_oice
 from ..operations.library import create_user_public_library
 from ..operations.credit import get_user_story_credit
+from ..operations.user import handle_anonymous_user_app_story_progress
 from .util import (
     subscribe_mailchimp,
     update_mailchimp_field,
@@ -198,12 +199,19 @@ def login_user(request):
 
         if not old_auth_id or request.headers.get('x-oice-app-version'):
             # log
+            is_redeem_account = prev_firebase_user_id and firebase_user_id != prev_firebase_user_id
+
             log_dict.update({
-                'action': 'redeemAccount' if prev_firebase_user_id and firebase_user_id != prev_firebase_user_id else 'login'
+                'action': 'redeemAccount' if is_redeem_account else 'login',
             })
             log_dict = set_basic_info_user_log(user, log_dict)
             log_dict = set_basic_info_log(request, log_dict)
             log_message(KAFKA_TOPIC_USER, log_dict)
+
+            if is_redeem_account:
+                handle_anonymous_user_app_story_progress(is_existing_user=True, \
+                                                         prev_user=prev_firebase_user_id, \
+                                                         new_user=user)
 
     photo_url = request.json_body.get('photoURL', None)
     if photo_url and user.avatar_storage is None:
@@ -267,6 +275,10 @@ def login_user(request):
             log_dict = set_basic_info_user_log(user, log_dict)
             log_dict = set_basic_info_log(request, log_dict)
             log_message(KAFKA_TOPIC_USER, log_dict)
+
+            handle_anonymous_user_app_story_progress(is_existing_user=False, \
+                                                     prev_user=prev_firebase_user_id, \
+                                                     new_user=user)
 
         user.is_anonymous = False
 
