@@ -13,6 +13,7 @@ class StoryTag(Base):
     name = sa.Column(sa.Unicode(128), index=True, nullable=False, unique=True)
     order = sa.Column(sa.Integer, nullable=False)
     is_hidden = sa.Column(sa.Boolean, nullable=False, index=True, server_default=false())
+    priority = sa.Column(sa.Integer, nullable=False, index=True, server_default='0')
     localizations = relationship('StoryTagLocalization',
                                  collection_class=attribute_mapped_collection('language'),
                                  cascade='all, delete-orphan',

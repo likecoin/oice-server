@@ -336,5 +336,4 @@ class StoryQuery:
                         )
                     )
 
-        return query.filter(Story.oice.any(state=2, sharing_option=0)) \
-                    .order_by(Story.updated_at.desc()) \
+        return query.filter(Story.oice.any(state=2, sharing_option=0))

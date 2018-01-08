@@ -509,6 +509,7 @@ def get_app_story_list(request):
         .get_stories_by_language(language=client_language,
                                  filtered_ids=filtered_story_ids,
                                  before_time=before_time)\
+        .order_by(Story.updated_at.desc())\
         .limit(limit).all()
 
     return {
@@ -575,7 +576,14 @@ def get_app_story_list_v2(request):
             .group_by(Story.id) \
             .filter(and_(Story.tags.any(StoryTag.id == tag_id) for tag_id in tag_ids))
 
-    stories = query.limit(limit).all()
+    stories = query \
+        .order_by(
+            Story.priority.desc(),
+            func.sum(StoryTag.priority).desc() if 'tag' in request.GET else None,
+            Story.updated_at.desc(),
+        ) \
+        .limit(limit) \
+        .all()
 
     return {
         'code': 200,
