@@ -91,6 +91,9 @@ user_id_profile_details = Service(name='user_id_profile_details',
                             renderer='json',
                             factory=UserFactory,
                             traverse='/{user_id}')
+user_status = Service(name='user_status',
+                    path='user/status',
+                    renderer='json')
 
 
 @login.post()
@@ -606,4 +609,11 @@ def get_user_id_profile_details(request):
         "libraries": libraries,
         "credits": credits,
       },
+    }
+
+@user_status.get(permission='get')
+def check_user_status(request):
+    return {
+      "code": 200,
+      "message": "ok",
     }
