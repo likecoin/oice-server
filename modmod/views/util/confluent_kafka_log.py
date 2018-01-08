@@ -34,6 +34,9 @@ def log_message(topic, dict_msg):
         try:
             producer.produce(topic, out_message.encode('utf-8'))
     
+            # poll for callback
+            # https://github.com/confluentinc/confluent-kafka-python/issues/16
+            producer.poll(0)
         except KafkaException as e: 
             log.error('Confluent kafka error: ' + str(e))
 
