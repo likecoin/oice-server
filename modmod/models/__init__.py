@@ -20,6 +20,14 @@ from .story_localization import (
     StoryLocalization
 )
 
+from .story_tag import (
+    StoryTag, StoryTagQuery,
+)
+
+from .story_tag_localization import (
+    StoryTagLocalization,
+)
+
 from .library import (
     Library, LibraryFactory, LibraryQuery
 )

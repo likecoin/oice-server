@@ -643,6 +643,26 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/StoryFeatured'
+  /tag/story:
+    get:
+      summary: Get all story tags
+      parameters:
+      - $ref: '#/parameters/language'
+      tags:
+      - Story
+      responses:
+        200:
+          description: List of story tags
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              tags:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryTag'
   /app/story/featured:
     get:
       summary: Get app featured story list
@@ -743,6 +763,11 @@ paths:
         required: false
         type: integer
         format: int32
+      - name: tag
+        in: query
+        description: The story tag list, separated by comma
+        required: false
+        type: string
       tags:
       - App
       - Story
@@ -3795,6 +3820,13 @@ definitions:
         type: string
       oice:
         $ref: '#/definitions/Oice'
+  StoryTag:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
   Library:
     type: object
     properties:
