@@ -210,7 +210,7 @@ def login_user(request):
 
             if is_redeem_account:
                 handle_anonymous_user_app_story_progress(is_existing_user=True, \
-                                                         prev_user=prev_firebase_user_id, \
+                                                         prev_user_email=prev_firebase_user_id, \
                                                          new_user=user)
 
     photo_url = request.json_body.get('photoURL', None)
@@ -277,7 +277,7 @@ def login_user(request):
             log_message(KAFKA_TOPIC_USER, log_dict)
 
             handle_anonymous_user_app_story_progress(is_existing_user=False, \
-                                                     prev_user=prev_firebase_user_id, \
+                                                     prev_user_email=prev_firebase_user_id, \
                                                      new_user=user)
 
         user.is_anonymous = False
