@@ -27,7 +27,7 @@ class UserSubscriptionPayout(Base, BaseMixin):
     is_paid = sa.Column(sa.Boolean, nullable=False, server_default=false())
 
     __table_args__ = (
-        Index('UserSubscriptionPayout_author_idx', 'author_id', 'is_paid'),
+        Index('usersubscriptionpayout_author_idx', 'author_id', 'is_paid'),
     )
 
 class UserSubscriptionPayoutQuery:
