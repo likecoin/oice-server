@@ -20,6 +20,7 @@ from . import DBSession
 
 from .story_library import story_library
 from .story_localization import StoryLocalization
+from .story_tagging import story_tagging
 
 
 class Story(Base, BaseMixin):
@@ -55,6 +56,13 @@ class Story(Base, BaseMixin):
                               cascade="all,delete-orphan",
                               backref="story",
                               lazy="joined")
+
+    tags = relationship(
+        'StoryTag',
+        secondary=story_tagging,
+        lazy='joined',
+        cascade='',
+    )
 
     __table_args__ = (
         sa.Index('story_updated_at_idx', 'updated_at'),
@@ -311,7 +319,7 @@ class StoryQuery:
     def get_sample_story(self, language=None):
         return self.get_story_by_id(Story.get_sample_story_id(language))
 
-    def get_stories_by_language(self, language=None, filtered_ids=None, before_time=None, limit=10):
+    def get_stories_by_language(self, language=None, filtered_ids=None, before_time=None):
         query = self.query
 
         if filtered_ids:
@@ -328,7 +336,4 @@ class StoryQuery:
                         )
                     )
 
-        return query.filter(Story.oice.any(state=2, sharing_option=0)) \
-                    .order_by(Story.updated_at.desc()) \
-                    .limit(limit) \
-                    .all()
+        return query.filter(Story.oice.any(state=2, sharing_option=0))

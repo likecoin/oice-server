@@ -361,6 +361,10 @@ def log_error_message(code, message, request):
     return
 
 
+def get_request_user(request):
+    return UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
+
+
 def check_is_language_valid(language):
     if language is None:
         return None
