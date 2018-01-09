@@ -8,6 +8,7 @@ from ..models import (
     UserQuery,
     UserSubscriptionPayout,
     UserSubscriptionPayoutQuery,
+    UserReadOiceProgressQuery,
 )
 from modmod.exc import ValidationError
 import json
@@ -74,3 +75,25 @@ def handle_membership_update(user, original_transaction_id, expire_timestamp, \
         user.expire_date = new_expire_date
     return 'ok'
 
+def handle_anonymous_user_app_story_progress(is_existing_user, prev_user_email, new_user):
+    # add story progress of anonymous user to the account binded / redeemed
+    old_user = UserQuery(DBSession).fetch_user_by_email(email=prev_user_email).one_or_none()
+    if not old_user:
+        raise HTTPForbidden
+
+    if old_user.is_anonymous:
+        old_user_progress = UserReadOiceProgressQuery(DBSession).fetch_by_user_id(old_user.id)
+        if is_existing_user:
+            new_user_progress = UserReadOiceProgressQuery(DBSession).fetch_by_user_id(new_user.id)
+            new_user_progress_dict = {p.oice_id: p.is_finished for p in new_user_progress}
+
+            for progress in old_user_progress:
+                if progress.oice_id in new_user_progress_dict:
+                    if new_user_progress_dict[progress.oice_id] < progress.is_finished:
+                        updated_progress = next((p for p in new_user_progress if p.oice_id == progress.oice_id))
+                        updated_progress.is_finished = True
+                else:
+                    progress.user_id = new_user.id
+        else:
+            for progress in old_user_progress:
+                progress.user_id = new_user.id

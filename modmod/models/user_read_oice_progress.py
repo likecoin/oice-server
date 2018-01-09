@@ -40,3 +40,6 @@ class UserReadOiceProgressQuery:
         oice_ids = set([o.id for o in story.oice])
         return self.fetch_by_user_id_and_oice_ids(user_id, oice_ids)
 
+    def fetch_by_user_id(self, user_id):
+        return self.query \
+                   .filter(UserReadOiceProgress.user_id == user_id)
