@@ -76,6 +76,11 @@ def log_dispatch(request):
     else:
         raise HTTPForbidden
 
+
+def echo(request):
+    return _LOG_SUCCESS
+
+
 # expected platform: webhook
 def logClickDeeplink(request):
     data = request.json_body
@@ -278,7 +283,8 @@ def logRequestRegister(request):
     viewer = UserQuery(DBSession).fetch_user_by_email(request.authenticated_userid).one_or_none()
     log_dict = set_register_log(data,'requestRegister', {})
     log_dict = set_basic_info_user_log(viewer, log_dict)
-    log_dict = set_basic_info_oice_log_author(oice.story.users[0], oice, log_dict)
+    if oice:
+        log_dict = set_basic_info_oice_log_author(oice.story.users[0], oice, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_OICE, log_dict)
     return _LOG_SUCCESS
@@ -291,7 +297,8 @@ def logSucceededRegister(request):
     viewer = UserQuery(DBSession).fetch_user_by_email(request.authenticated_userid).one_or_none()
     log_dict = set_register_log(data,'succeededRegister', {})
     log_dict = set_basic_info_user_log(viewer, log_dict)
-    log_dict = set_basic_info_oice_log_author(oice.story.users[0], oice, log_dict)
+    if oice:
+        log_dict = set_basic_info_oice_log_author(oice.story.users[0], oice, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_USER, log_dict)
     return _LOG_SUCCESS
@@ -304,7 +311,8 @@ def logCancelRegister(request):
     viewer = UserQuery(DBSession).fetch_user_by_email(request.authenticated_userid).one_or_none()
     log_dict = set_register_log(data,'cancelRegister', {})
     log_dict = set_basic_info_user_log(viewer, log_dict)
-    log_dict = set_basic_info_oice_log_author(oice.story.users[0], oice, log_dict)
+    if oice:
+        log_dict = set_basic_info_oice_log_author(oice.story.users[0], oice, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_USER, log_dict)
     return _LOG_SUCCESS
@@ -317,7 +325,8 @@ def logFailedRegister(request):
     viewer = UserQuery(DBSession).fetch_user_by_email(request.authenticated_userid).one_or_none()
     log_dict = set_register_log(data,'failedRegister', {})
     log_dict = set_basic_info_user_log(viewer, log_dict)
-    log_dict = set_basic_info_oice_log_author(oice.story.users[0], oice, log_dict)
+    if oice:
+        log_dict = set_basic_info_oice_log_author(oice.story.users[0], oice, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_USER, log_dict)
     return _LOG_SUCCESS

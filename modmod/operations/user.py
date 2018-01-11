@@ -75,13 +75,11 @@ def handle_membership_update(user, original_transaction_id, expire_timestamp, \
         user.expire_date = new_expire_date
     return 'ok'
 
+
 def handle_anonymous_user_app_story_progress(is_existing_user, prev_user_email, new_user):
     # add story progress of anonymous user to the account binded / redeemed
     old_user = UserQuery(DBSession).fetch_user_by_email(email=prev_user_email).one_or_none()
-    if not old_user:
-        raise HTTPForbidden
-
-    if old_user.is_anonymous:
+    if old_user and old_user.is_anonymous:
         old_user_progress = UserReadOiceProgressQuery(DBSession).fetch_by_user_id(old_user.id)
         if is_existing_user:
             new_user_progress = UserReadOiceProgressQuery(DBSession).fetch_by_user_id(new_user.id)
