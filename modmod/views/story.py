@@ -563,6 +563,7 @@ def get_app_story_list_v2(request):
         except OverflowError:
             pass
 
+    offset = request.GET.get('offset', 0)
     limit = request.GET.get('limit', 10)
 
     # Filter the stories (if any) from the story list
@@ -575,16 +576,14 @@ def get_app_story_list_v2(request):
     # Tag
     if 'tag' in request.GET:
         tag_ids = request.GET['tag'].split(',')
-        query = query.join(Story.tags) \
-            .group_by(Story.id) \
-            .filter(and_(Story.tags.any(StoryTag.id == tag_id) for tag_id in tag_ids))
+        query = query.filter(and_(Story.tags.any(StoryTag.id == tag_id) for tag_id in tag_ids))
 
     stories = query \
         .order_by(
-            Story.priority.desc(),
-            func.sum(StoryTag.priority).desc() if 'tag' in request.GET else None,
+            Story.priority.desc() if 'offset' in request.GET else None,
             Story.updated_at.desc(),
         ) \
+        .offset(offset) \
         .limit(limit) \
         .all()
 

@@ -757,6 +757,12 @@ paths:
         description: The filtered stories ID separate by comma
         required: false
         type: string
+      - name: offset
+        in: query
+        description: The offset of the stories returns
+        required: false
+        type: integer
+        format: int32      
       - name: limit
         in: query
         description: The limit of the number stories returns
