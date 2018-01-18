@@ -36,6 +36,7 @@ stripe_client_id = None
 stripe_plan_id = None
 android_iap_validator_url = None
 ios_iap_validator_url = None
+ios_iap_validator_url_v2 = None
 iap_sub_price = None
 iap_sub_price_payout_ratio= None
 is_production = False
@@ -59,6 +60,7 @@ def includeme(config):
     global stripe_plan_id
     global android_iap_validator_url
     global ios_iap_validator_url
+    global ios_iap_validator_url_v2
     global es_log_whitelist
     global es_log_key
     global is_production
@@ -75,6 +77,8 @@ def includeme(config):
         config.get_settings().get('iapvalidator.android_url', None)
     ios_iap_validator_url = \
         config.get_settings().get('iapvalidator.ios_url', None)
+    ios_iap_validator_url_v2 = \
+        config.get_settings().get('iapvalidator.ios_url_v2', None)
     es_log_whitelist_str = \
         config.get_settings().get('eslog.whitelist', None)
     es_log_whitelist = [path for path in es_log_whitelist_str.split(',')]
@@ -125,6 +129,13 @@ def get_ios_iap_validator_url():
     global ios_iap_validator_url
     if ios_iap_validator_url is not None:
         return ios_iap_validator_url
+    else:
+        return None
+
+def get_ios_iap_validator_url_v2():
+    global ios_iap_validator_url_v2
+    if ios_iap_validator_url_v2 is not None:
+        return ios_iap_validator_url_v2
     else:
         return None
 

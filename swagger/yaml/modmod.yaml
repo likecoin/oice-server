@@ -246,6 +246,9 @@ paths:
         required: true
         schema:
           properties:
+            productId:
+              type: string
+              description: The subscription product Id
             receipt:
               type: string
               description: android product receipt in json format
@@ -278,6 +281,49 @@ paths:
     post:
       summary: Upgrade membership via ios subscription
       parameters:
+      - name: receipt
+        description: ios iap receipt
+        in: body
+        required: true
+        schema:
+          properties:
+            receipt:
+              type: string
+              description: ios7 style whole receipt in base64
+      tags:
+      - User
+      responses:
+        200:
+          description: upgrade membership
+          schema:
+            properties:
+              user:
+                $ref: '#/definitions/User'
+              message:
+                type: string
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
+  /v2/membership/ios/{product_id}:
+    post:
+      summary: Upgrade membership via ios subscription
+      parameters:
+      - name: product_id
+        in: path
+        description: The product ID of the subscription
+        requireD: true
+        type: string
       - name: receipt
         description: ios iap receipt
         in: body
@@ -3973,6 +4019,10 @@ definitions:
       language:
         type: string
       avatar:
+        type: string
+      androidProductId:
+        type: string
+      iosProductId:
         type: string
       expireDate:
         type: string

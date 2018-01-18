@@ -42,7 +42,9 @@ class User(Base, BaseMixin):
     stripe_access_token = sa.Column(sa.Unicode(128), nullable=True, unique=True)
     stripe_refresh_token = sa.Column(sa.Unicode(128), nullable=True, unique=True)
     stripe_account_id = sa.Column(sa.Unicode(128), nullable=True, unique=False)
+    android_product_id = sa.Column(sa.Unicode(128), nullable=True)
     android_original_transaction_id = sa.Column(sa.Unicode(128), nullable=True, unique=True)
+    ios_product_id = sa.Column(sa.Unicode(128), nullable=True)
     ios_original_transaction_id = sa.Column(sa.Unicode(128), nullable=True, unique=True)
     expire_date = sa.Column(sa.DateTime, nullable=True)
     is_cancelled = sa.Column(sa.Boolean, nullable=False, server_default=true())
@@ -110,6 +112,8 @@ class User(Base, BaseMixin):
             'avatar': self.avatar_url(),
             "isTrial": self.is_trial,
             'expireDate': self.expire_date.isoformat() if self.expire_date else None,
+            'androidProductId': self.android_product_id,
+            'iosProductId': self.ios_product_id,
             'isCancelled' : self.is_cancelled,
             'tutorialState': self.serialize_tutorial_state(),
             'isStripeConnected' : bool(self.stripe_account_id),
