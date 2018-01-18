@@ -27,8 +27,13 @@ def start_trial(user):
     return False
 
 
-def handle_membership_update(user, original_transaction_id, expire_timestamp, \
-                                        developer_payload, platform, payout_amount):
+def handle_membership_update(user,
+                             product_id,
+                             original_transaction_id,
+                             expire_timestamp,
+                             developer_payload,
+                             platform,
+                             payout_amount):
     if developer_payload.split(':')[0] == 'subs':
         # handle developer_payload for Android subscription
         developer_payload = developer_payload.split(':')[2:]
@@ -59,12 +64,14 @@ def handle_membership_update(user, original_transaction_id, expire_timestamp, \
             if user_record is not None and user_record != user:
                 raise ValidationError('ERR_IAP_RECEIPT_ALREADY_USED')
             else:
+                user.android_product_id = product_id
                 user.android_original_transaction_id = original_transaction_id
         elif 'ios' == platform:
             user_record = UserQuery(DBSession).fetch_user_by_ios_transaction_id(original_transaction_id)
             if user_record is not None and user_record != user:
                 raise ValidationError('ERR_IAP_RECEIPT_ALREADY_USED')
             else:
+                user.ios_product_id = product_id
                 user.ios_original_transaction_id = original_transaction_id
         else:
             raise ValidationError("ERR_IAP_PLATFORM_UNKNOWN")

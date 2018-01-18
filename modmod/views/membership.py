@@ -30,6 +30,7 @@ from . import (
     set_basic_info_oice_log_author,
     get_android_iap_validator_url,
     get_ios_iap_validator_url,
+    get_ios_iap_validator_url_v2,
     get_iap_sub_price,
     get_iap_sub_price_payout_ratio,
 )
@@ -52,6 +53,10 @@ membership_android= Service(name='membership_android',
 membership_ios = Service(name='membership_ios',
                               path='membership/ios',
                               renderer='json')
+
+membership_ios_v2 = Service(name='membership_ios_v2',
+                            path='v2/membership/ios/{product_id}',
+                            renderer='json')
 
 strip_hook = Service(name='strip_hook',
                         path='strip_hook',
@@ -243,10 +248,9 @@ def revoke_stripe_access(request):
         "code": 200
     }
 
+
 @membership_android.post(permission='get')
 def post_android_subscription(request):
-    payload = request.json_body
-
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
     if not user:
         raise HTTPForbidden
@@ -256,7 +260,7 @@ def post_android_subscription(request):
     else:
         log_action = 'reSubscribe'
     
-    payload = {'receipt': payload['receipt']}
+    payload = {'receipt': request.json_body['receipt']}
     url = get_android_iap_validator_url()
     r = requests.post(url, data=payload)
     result = None
@@ -266,13 +270,18 @@ def post_android_subscription(request):
         code = response_dict['code']
         if code != 0:
             raise ValidationError('ERR_IAP_VALIDATOR_NON_ZERO')
+        product_id = response_dict['product_id']
         original_transaction_id = response_dict['original_transaction_id']
         expire_date = response_dict['expires_date']
         developer_payload = response_dict['developer_payload']
         payout_amount = int(math.ceil(get_iap_sub_price() * get_iap_sub_price_payout_ratio() * 100))/100.0
-        result = UserOperations.handle_membership_update(user, original_transaction_id, \
-                                                expire_date, developer_payload, "android", \
-                                                payout_amount)
+        result = UserOperations.handle_membership_update(user,
+                                                         product_id,
+                                                         original_transaction_id,
+                                                         expire_date,
+                                                         developer_payload,
+                                                         "android",
+                                                         payout_amount)
     else:
         raise ValidationError('ERR_IAP_VALIDATOR_CONN')
 
@@ -298,9 +307,20 @@ def post_android_subscription(request):
         "code": 200
     }
 
+
 @membership_ios.post(permission='get')
 def post_ios_subscription(request):
+    url = get_ios_iap_validator_url()
+    return ios_subscribe(request, validator_url=url)
 
+
+@membership_ios_v2.post(permission='get')
+def post_ios_subscription_v2(request):
+    url = get_ios_iap_validator_url_v2() + '/' + request.matchdict['product_id']
+    return ios_subscribe(request, validator_url=url)
+
+
+def ios_subscribe(request, validator_url):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
     if not user:
         raise HTTPForbidden
@@ -312,37 +332,46 @@ def post_ios_subscription(request):
 
     payload = request.json_body
     receipt = {'receipt': payload['receipt']}
-    url = get_ios_iap_validator_url()
-    r = requests.post(url, data=receipt)
+    r = requests.post(validator_url, data=receipt)
+
     result = None
     if r.status_code == requests.codes.ok:
         response_content = r.text
         response_dict = json.loads(response_content)
+
         code = response_dict['code']
         if code != 0:
             raise ValidationError('ERR_IAP_VALIDATOR_NON_ZERO')
 
+        product_id = response_dict['product_id']
         original_transaction_id = response_dict['original_transaction_id']
         expire_date = response_dict['expires_date']
         developer_payload = payload['developerPayload']
-        payout_amount = int(math.ceil(get_iap_sub_price() * get_iap_sub_price_payout_ratio() * 100))/100.0
-        result = UserOperations.handle_membership_update(user, original_transaction_id, \
-                                            expire_date, developer_payload, "ios", \
-                                            payout_amount)
+        payout_amount = int(math.ceil(get_iap_sub_price() * get_iap_sub_price_payout_ratio() * 100)) / 100.0
+        result = UserOperations.handle_membership_update(user,
+                                                         product_id,
+                                                         original_transaction_id,
+                                                         expire_date,
+                                                         developer_payload,
+                                                         "ios",
+                                                         payout_amount)
     else:
         raise ValidationError('ERR_IAP_VALIDATOR_CONN')
 
-    length = math.ceil(len(payload["receipt"])/2)
+    length = math.ceil(len(payload["receipt"]) / 2)
     log_dict = {
         'action': log_action,
         'receiptPartA': payload["receipt"][0:length],
         'receiptPartB': payload["receipt"][length:],
     }
+
     payload_dict = json.loads(developer_payload)
+
     if 'oiceId' in payload_dict:
         oice_id = payload_dict['oiceId']
         oice = OiceQuery(DBSession).get_by_id(oice_id=oice_id)
         log_dict = set_basic_info_oice_log_author(oice=oice, log_dict=log_dict)
+
     log_dict = set_basic_info_membership_log(user, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_USER, log_dict)
@@ -352,6 +381,7 @@ def post_ios_subscription(request):
         "message": result,
         "code": 200
     }
+
 
 @strip_hook.post()
 def get_stripe_webhook(request):
