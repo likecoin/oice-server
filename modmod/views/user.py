@@ -125,12 +125,6 @@ def login_user(request):
     if is_anonymous and firebase_user_id:
         fetch_username = firebase_user_id
 
-    response = Response()
-    response.status_code = 200
-    response.headers = remember(request, fetch_username)
-    response.content_type = 'application/json'
-    response.charset = 'UTF-8'
-
     # Init these bool here to avoid scope issue
     is_first_login = False
     is_trial_ended = False
@@ -295,6 +289,11 @@ def login_user(request):
         digestmod=hashlib.sha256
     ).hexdigest()
 
+    response = Response()
+    response.status_code = 200
+    response.headers = remember(request, user.email)
+    response.content_type = 'application/json'
+    response.charset = 'UTF-8'
     response.text = json.dumps({'code': 200, 'user': serialize_user})
 
     return response
