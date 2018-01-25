@@ -127,7 +127,6 @@ def login_user(request):
 
     response = Response()
     response.status_code = 200
-    response.headers = remember(request, fetch_username)
     response.content_type = 'application/json'
     response.charset = 'UTF-8'
 
@@ -295,6 +294,7 @@ def login_user(request):
         digestmod=hashlib.sha256
     ).hexdigest()
 
+    response.headers = remember(request, user.email)
     response.text = json.dumps({'code': 200, 'user': serialize_user})
 
     return response
