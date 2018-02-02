@@ -711,8 +711,30 @@ paths:
                   $ref: '#/definitions/StoryTag'
   /app/story/featured:
     get:
+      summary: Get app featured story list (Deprecated)
+      parameters:
+      - $ref: '#/parameters/language'
+      tags:
+      - App
+      - Story
+      responses:
+        200:
+          description: Featured story list
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              stories:
+                type: array
+                items:
+                  $ref: '#/definitions/StoryApp'
+  /v{version}/app/story/featured:
+    get:
       summary: Get app featured story list
       parameters:
+      - $ref: '#/parameters/version'
       - $ref: '#/parameters/language'
       tags:
       - App
@@ -732,7 +754,7 @@ paths:
                   $ref: '#/definitions/StoryApp'
   /app/story:
     get:
-      summary: Get app story list
+      summary: Get app story list (Deprecated)
       parameters:
       - name: playingId
         in: query
@@ -783,10 +805,11 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/StoryApp'
-  /v2/app/story:
+  /v{version}/app/story:
     get:
-      summary: Get app story list (ver. 2)
+      summary: Get app story list
       parameters:
+      - $ref: '#/parameters/version'
       - name: language
         in: query
         description: Language of the client
@@ -836,6 +859,38 @@ paths:
                 type: array
                 items:
                   $ref: '#/definitions/StoryApp'
+  /v{version}/app/story/{storyId}/details:
+    get:
+      summary: Get app story details
+      parameters:
+      - $ref: '#/parameters/version'
+      - $ref: '#/parameters/story_id'
+      tags:
+      - App
+      - Story
+      responses:
+        200:
+          description: Story details
+          schema:
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+              story:
+                type: object
+                  description: A story details
+                  properties:
+                    id:
+                      type: integer
+                    likeCount:
+                      type: string
+                    shareUrl:
+                      type: string
+        404:
+          description: The item you are looking for cannot be found
+          schema:
+            $ref: '#/definitions/ErrorItemNotFound'
   /app/story/{storyId}/progress:
     get:
       summary: Get app story progress
@@ -4448,6 +4503,13 @@ definitions:
         type: string
         description: The detail of the message
 parameters:
+  version:
+    name: version
+    in: path
+    description: Version of the story
+    required: false
+    type: integer
+    format: int64
   story_id:
     name: storyId
     in: path

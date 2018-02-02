@@ -275,6 +275,16 @@ class Story(Base, BaseMixin):
             'hasLiked': user in self.liked_users,
         }
 
+    def serialize_app_v2(self, language=None):
+        return {
+            'id': self.id,
+            'name': self.get_name(language),
+            'description': self.get_description(language),
+            'cover': self.get_cover_storage_url(language),
+            'language': self.get_complementary_language(language),
+            'updatedAt': self.updated_at.isoformat(),
+        }
+
     def serialize_featured(self, language=None):
         return {
             'id': self.id,
