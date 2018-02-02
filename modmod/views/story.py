@@ -719,7 +719,7 @@ def get_app_story_episodes(request):
     return {
         'code': 200,
         'message': 'ok',
-        'story': story.serialize_min(query_language),
+        'story': story.serialize_credits(query_language),
         'oices': [
             {
                 **o.serialize_profile(query_language),
