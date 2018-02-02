@@ -228,19 +228,6 @@ class Story(Base, BaseMixin):
     def is_supported_language(self, language):
         return language in self.supported_languages
 
-    def serialize(self, language=None):
-        return {
-            'id': self.id,
-            'name': self.get_name(language),
-            'description': self.get_description(language),
-            'language': self.get_language(language),
-            'author' : self.users[0].serialize_min() if self.users else None,  # assume user[0] is author
-            'updatedAt': self.updated_at.isoformat(),
-            'cover': self.get_cover_storage_url(language),
-            'coverStorage': self.get_cover_storage_url(language), # deprecated
-            'ogImage': self.get_og_image_url_obj(language),
-        }
-
     def serialize_min(self, language=None):
         return {
             'id': self.id,
@@ -248,26 +235,33 @@ class Story(Base, BaseMixin):
             'description': self.get_description(language),
             'language': self.get_language(language),
             'cover': self.get_cover_storage_url(language),
+        }
+
+    def serialize(self, language=None):
+        return {
+            **self.serialize_min(language=language),
+            'updatedAt': self.updated_at.isoformat(),
+            'coverStorage': self.get_cover_storage_url(language),  # deprecated
+            'author' : self.users[0].serialize_min() if self.users else None,  # assume user[0] is author
+            'ogImage': self.get_og_image_url_obj(language),
+        }
+
+    def serialize_credits(self, language=None):
+        return {
+            **self.serialize_min(language=language),
             'authors': [u.serialize_min() for u in self.users],
         }
 
     def serialize_profile(self, language=None):
         return {
-            'id': self.id,
-            'name': self.get_name(language),
-            'description': self.get_description(language),
-            'cover': self.get_cover_storage_url(language),
+            **self.serialize_min(language=language),
             'oiceUuid': self.oice[0].uuid if self.oice else '',
         }
 
     def serialize_app(self, user=None, language=None):
         return {
-            'id': self.id,
-            'name': self.get_name(language),
-            'description': self.get_description(language),
-            'cover': self.get_cover_storage_url(language),
+            **self.serialize_min(language=language),
             'oiceUuid': self.oice[0].uuid if self.oice else '',
-            'language': self.get_complementary_language(language),
             'oiceCount': len(self.published_oices),
             'likeCount': len(self.liked_users),
             'shareUrl': self.oice[0].get_share_url(language) if self.oice else '',
@@ -277,20 +271,13 @@ class Story(Base, BaseMixin):
 
     def serialize_app_v2(self, language=None):
         return {
-            'id': self.id,
-            'name': self.get_name(language),
-            'description': self.get_description(language),
-            'cover': self.get_cover_storage_url(language),
-            'language': self.get_complementary_language(language),
+            **self.serialize_min(language=language),
             'updatedAt': self.updated_at.isoformat(),
         }
 
     def serialize_featured(self, language=None):
         return {
-            'id': self.id,
-            'name': self.get_name(language),
-            'description': self.get_description(language),
-            'cover': self.get_cover_storage_url(language),
+            **self.serialize_min(language=language),
             'titleLogo': self.title_logo_url,
             'heroImage': self.hero_image_url,
             'oice': self.oice[0].serialize(language=language) if self.oice else None,
