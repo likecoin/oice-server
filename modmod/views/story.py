@@ -8,6 +8,7 @@ from pyramid.httpexceptions import HTTPForbidden
 from cornice import Service
 from modmod.exc import ValidationError
 from sqlalchemy import func, and_, or_
+from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.exc import NoResultFound
 
 from ..models import (
@@ -109,9 +110,17 @@ app_story = Service(name='app_story',
 app_story_featured = Service(name='app_story_featured',
                              path='app/story/featured',
                              renderer='json')
-app_story_v2 = Service(name='app_story_v2',
-                       path='v2/app/story',
-                       renderer='json')
+version_app_story_featured = Service(name='version_app_story_featured',
+                                     path='v{version}/app/story/featured',
+                                     renderer='json')
+version_app_story = Service(name='version_app_story',
+                            path='v{version}/app/story',
+                            renderer='json')
+version_app_story_details = Service(name='version_app_story_id_details',
+                                    path='v{version}/app/story/{story_id}/details',
+                                    renderer='json',
+                                    factory=StoryFactory,
+                                    traverse='/{story_id}')
 app_story_progress = Service(name='app_story_id_progress',
                              path='app/story/{story_id}/progress',
                              renderer='json',
@@ -133,6 +142,13 @@ def get_request_language(request, user=None):
 def fetch_story_query_language(request, story):
     query_language = request.params.get('language')
     return check_is_language_valid(query_language) if query_language else story.language
+
+
+def get_request_version(request, default=1):
+    try:
+        return int(request.matchdict.get('version', default))
+    except ValueError:
+        return default
 
 
 @story_id.get(permission='get')
@@ -470,6 +486,7 @@ def get_story_tag(request):
     }
 
 
+# Deprecated
 @app_story.get()
 def get_app_story_list(request):
     user = get_request_user(request)
@@ -520,11 +537,12 @@ def get_app_story_list(request):
         'message': 'ok',
         'playingStory': playing_story.serialize_app(user, language=client_language) if playing_story else None,
         'featuredStories': [fs.story.serialize_app(user, language=fs_language) for fs in featured_stories],
-        'localizedStories': [],  # Deprecated
+        'localizedStories': [],
         'stories': [s.serialize_app(user, language=client_language) for s in stories],
     }
 
 
+# Deprecated
 @app_story_featured.get()
 def get_app_featured_story(request):
     user = get_request_user(request)
@@ -545,8 +563,35 @@ def get_app_featured_story(request):
     }
 
 
-@app_story_v2.get()
-def get_app_story_list_v2(request):
+@version_app_story_featured.get()
+def get_app_featured_story_by_version(request):
+    user = get_request_user(request)
+
+    # If there is no featured story in client language, return story in default language
+    client_language = get_request_language(request, user=user)
+    has_fs_in_client_language = FeaturedStoryQuery(DBSession).has_language(client_language)
+    fs_language = client_language if has_fs_in_client_language else get_default_lang()
+
+    offset = request.GET.get('offset', 0)
+    limit  = request.GET.get('limit', 5)
+
+    featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
+                                                    .options(joinedload(FeaturedStory.story)) \
+                                                    .order_by(FeaturedStory.tier) \
+                                                    .limit(limit) \
+                                                    .offset(offset) \
+                                                    .all()
+
+    return {
+        'code': 200,
+        'message': 'ok',
+        'stories': [fs.story.serialize_app_v2(language=fs_language) for fs in featured_stories],
+    }
+
+
+@version_app_story.get()
+def get_app_story_list_by_version(request):
+    version = get_request_version(request)
     user = get_request_user(request)
 
     # Language
@@ -587,10 +632,32 @@ def get_app_story_list_v2(request):
         .limit(limit) \
         .all()
 
+    if version > 2:
+        serialized_stories = [s.serialize_app_v2(language=client_language) for s in stories]
+    else:
+        serialized_stories = [s.serialize_app(user, language=client_language) for s in stories]
+
     return {
         'code': 200,
         'message': 'ok',
-        'stories': [s.serialize_app(user, language=client_language) for s in stories],
+        'stories': serialized_stories,
+    }
+
+
+@version_app_story_details.get()
+def get_app_story_details_by_version(request):
+    user = get_request_user(request)
+    client_language = get_request_language(request, user=user)
+    story = request.context
+
+    return {
+        'code': 200,
+        'message': 'ok',
+        'story': {
+            'id': story.id,
+            'likeCount': len(story.liked_users),
+            'shareUrl': story.oice[0].get_share_url(client_language) if story.oice else '',
+        }
     }
 
 
