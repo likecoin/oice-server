@@ -4086,6 +4086,10 @@ definitions:
         type: boolean
       isCancelled:
         type: boolean
+      username:
+        type: string
+      likeCoinId:
+        type: string
   UserMin:
     type: object
     properties:
