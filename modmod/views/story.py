@@ -577,7 +577,7 @@ def get_app_featured_story_by_version(request):
 
     featured_stories = FeaturedStoryQuery(DBSession).fetch_by_language(fs_language) \
                                                     .options(joinedload(FeaturedStory.story)) \
-                                                    .order_by(FeaturedStory.tier) \
+                                                    .order_by(FeaturedStory.tier, FeaturedStory.order) \
                                                     .limit(limit) \
                                                     .offset(offset) \
                                                     .all()
