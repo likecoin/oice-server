@@ -50,6 +50,7 @@ class User(Base, BaseMixin):
     is_cancelled = sa.Column(sa.Boolean, nullable=False, server_default=true())
     is_anonymous = sa.Column(sa.Boolean, nullable=False, server_default=false())
     tutorial_state = sa.Column(mysql.BIT(32), nullable=False, server_default=text("b'0'"))
+    like_coin_id = sa.Column(sa.Unicode(128), nullable=True, unique=True)
     stories = relationship(
         "Story",
         secondary=user_story,
@@ -119,6 +120,7 @@ class User(Base, BaseMixin):
             'isStripeConnected' : bool(self.stripe_account_id),
             'hasPaymentInfo' : bool(self.customer_id),
             'isAnonymous': self.is_anonymous,
+            'likeCoinId': self.like_coin_id,
         }
 
     def serialize_min(self):

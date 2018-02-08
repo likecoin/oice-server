@@ -387,11 +387,19 @@ def update_profile(request):
             if 'tutorialState' in meta:
                 newValue = int("".join(str(int(item)) for item in meta['tutorialState']), 2)
                 log_dict['change'].append({
-                        'whichFieldChange': 'tutorialState',
-                        'beforeChange': user.tutorial_state,
-                        'afterChange': newValue,
-                    })
+                    'whichFieldChange': 'tutorialState',
+                    'beforeChange': user.tutorial_state,
+                    'afterChange': newValue,
+                })
                 user.tutorial_state = newValue
+
+            if 'likeCoinId' in meta:
+                log_dict['change'].append({
+                    'whichFieldChange': 'likeCoinId',
+                    'beforeChange': user.like_coin_id,
+                    'afterChange': meta['likeCoinId'],
+                })
+                user.like_coin_id = meta['likeCoinId']
 
         if 'avatar' in request.POST:
             avatar_file = request.POST['avatar']
