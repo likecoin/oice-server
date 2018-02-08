@@ -38,7 +38,9 @@ android_iap_validator_url = None
 ios_iap_validator_url = None
 ios_iap_validator_url_v2 = None
 iap_sub_price = None
-iap_sub_price_payout_ratio= None
+iap_sub_price_payout_ratio = None
+voucher_api_url = None
+voucher_api_key = None
 is_production = False
 
 
@@ -61,6 +63,8 @@ def includeme(config):
     global android_iap_validator_url
     global ios_iap_validator_url
     global ios_iap_validator_url_v2
+    global voucher_api_url
+    global voucher_api_key
     global es_log_whitelist
     global es_log_key
     global is_production
@@ -79,6 +83,10 @@ def includeme(config):
         config.get_settings().get('iapvalidator.ios_url', None)
     ios_iap_validator_url_v2 = \
         config.get_settings().get('iapvalidator.ios_url_v2', None)
+    voucher_api_url = \
+        config.get_settings().get('voucher_api.url', None)
+    voucher_api_key = \
+        config.get_settings().get('voucher_api.key', None)
     es_log_whitelist_str = \
         config.get_settings().get('eslog.whitelist', None)
     es_log_whitelist = [path for path in es_log_whitelist_str.split(',')]
@@ -154,6 +162,22 @@ def get_iap_sub_price_payout_ratio():
         return iap_sub_price_payout_ratio
     else:
         return 0.7
+
+
+def get_voucher_api_url():
+    global voucher_api_url
+    if voucher_api_url is not None:
+        return voucher_api_url
+    else:
+        return None
+
+
+def get_voucher_api_key():
+    global voucher_api_key
+    if voucher_api_key is not None:
+        return voucher_api_key
+    else:
+        return None
 
 
 def get_es_log_whitelist():

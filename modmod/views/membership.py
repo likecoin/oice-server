@@ -33,6 +33,8 @@ from . import (
     get_ios_iap_validator_url_v2,
     get_iap_sub_price,
     get_iap_sub_price_payout_ratio,
+    get_voucher_api_url,
+    get_voucher_api_key,
 )
 from ..operations import user as UserOperations
 
@@ -69,6 +71,12 @@ strip_connect_hook = Service(name='strip_connect_hook',
 trial_hook = Service(name='trial_hook',
                         path='trial_hook',
                         renderer='json')
+
+voucher_redeem_code = Service(
+    name='version_voucher_redeem_code',
+    path='v{version}/voucher/redeem/{code}',
+    renderer='json',
+)
 
 
 @membership.post(permission='get')
@@ -472,3 +480,60 @@ def check_user_trial_expire(request):
         "message": "ok",
         "code": 200
     }
+
+
+@voucher_redeem_code.post(permission='get')
+def redeem_voucher(request):
+    user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
+
+    voucher_code = request.matchdict.get('code')
+    url = get_voucher_api_url() + '/voucher/redeem/' + voucher_code
+
+    try:
+        r = requests.post(
+            url=url,
+            headers={'Authentication': get_voucher_api_key()},
+            data={'userId': user.id},
+        )
+        response = r.json()
+    except Exception:
+        pass
+    else:
+        code = response.get('code')
+
+        if code == 'SUCCESS':
+            new_expiry_date = datetime.strptime(response['redemption']['expireAt'], '%Y-%m-%dT%H:%M:%SZ')
+
+            # Allow extend the expiry date
+            if new_expiry_date - datetime.now() > new_expiry_date - user.expire_date:
+                new_expiry_date = user.expire_date + (new_expiry_date - datetime.now())
+
+            if user.expire_date is None or new_expiry_date > user.expire_date:
+                user.role = 'paid'
+                user.is_trial = False
+                user.is_cancelled = False
+                user.expire_date = new_expiry_date
+
+            return {
+                'code': 200,
+                'message': 'ok',
+                'user': user.serialize(),
+                'newExpiryDate': new_expiry_date.isoformat(),
+            }
+
+        elif code == 'INVALID_CODE':
+            raise ValidationError('ERR_VOUCHER_CODE_INVALID')
+
+        elif code == 'NOT_YET':
+            raise ValidationError('ERR_VOUCHER_NOT_YET_EFFECTIVE')
+
+        elif code == 'EXPIRED':
+            raise ValidationError('ERR_VOUCHER_EXPIRED')
+
+        elif code == 'REDEEMED_ALREADY':
+            raise ValidationError('ERR_VOUCHER_REDEEMED_ALREADY')
+
+        elif code == 'REACH_LIMIT':
+            raise ValidationError('ERR_VOUCHER_REDEMPTION_LIMIT_REACH')
+
+    raise ValidationError('ERR_VOUCHER_SERVICE_FAILURE')
