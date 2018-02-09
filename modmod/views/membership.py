@@ -487,7 +487,7 @@ def redeem_voucher(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
     voucher_code = request.matchdict.get('code')
-    url = get_voucher_api_url() + '/voucher/redeem/' + voucher_code
+    url = get_voucher_api_url() + '/voucher/' + voucher_code + '/redeem'
 
     try:
         r = requests.post(
@@ -505,7 +505,7 @@ def redeem_voucher(request):
             new_expiry_date = datetime.strptime(response['redemption']['expireAt'], '%Y-%m-%dT%H:%M:%SZ')
 
             # Allow extend the expiry date
-            if new_expiry_date - datetime.now() > new_expiry_date - user.expire_date:
+            if user.expire_date is not None and new_expiry_date - datetime.now() > new_expiry_date - user.expire_date:
                 new_expiry_date = user.expire_date + (new_expiry_date - datetime.now())
 
             if user.expire_date is None or new_expiry_date > user.expire_date:
