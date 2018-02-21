@@ -41,7 +41,9 @@ def handle_membership_update(user,
 
     payload_dict = json.loads(developer_payload)
 
-    if payload_dict['email'] != user.email:
+    if user is None:
+        user = UserQuery(DBSession).fetch_user_by_email(payload_dict['email']).one()
+    elif payload_dict['email'] != user.email:
         raise ValidationError('ERR_IAP_VALIDATOR_USER_NOT_MATCH')
 
     if 'oiceId' in payload_dict and user.is_new_subscribe \
@@ -80,7 +82,7 @@ def handle_membership_update(user,
         user.is_cancelled = False
         user.platform = platform
         user.expire_date = new_expire_date
-    return 'ok'
+    return user
 
 
 def handle_anonymous_user_app_story_progress(is_existing_user, prev_user_email, new_user):
