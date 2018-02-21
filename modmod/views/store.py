@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload, contains_eager
 from sqlalchemy.orm.exc import NoResultFound
 from pyramid.httpexceptions import HTTPForbidden
+from pyramid.response import Response
 
 from ..models import (
     DBSession,
@@ -333,16 +334,24 @@ def purchase_library(request):
               customer.source = request.json_body['id']
               customer.save()
 
-        charge = stripe.Charge.create(
-            amount=int(charge_amount),
-            currency="usd",
-            customer=customer,
-            description='oice asset store - ' + library.name,
-            destination={
-              "amount": int(math.ceil(charge_amount * 0.7)),
-              "account": library.users[0].stripe_account_id,
-            }
-        )
+        try:
+            charge = stripe.Charge.create(
+                amount=int(charge_amount),
+                currency="usd",
+                customer=customer,
+                description='oice asset store - ' + library.name,
+                destination={
+                  "amount": int(math.ceil(charge_amount * 0.7)),
+                  "account": library.users[0].stripe_account_id,
+                }
+            )
+        except Exception as e:
+            return Response(status=400, json={
+                'code': 400,
+                'message': 'ERR_LIBRARY_PURCHASE_FAILURE',
+                'stripeCode': str(e),
+            })
+
         user.libraries_purchased.append(library)
         user.libraries_selected.append(library)
 
