@@ -1,5 +1,6 @@
 from cornice import Service
 from datetime import datetime
+import base64
 import logging
 import math
 import stripe
@@ -59,6 +60,12 @@ membership_ios = Service(name='membership_ios',
 membership_ios_v2 = Service(name='membership_ios_v2',
                             path='v2/membership/ios/{product_id}',
                             renderer='json')
+
+webhook_subscription_android = Service(
+    name='webhook_subscription_android',
+    path='webhook/subscription/android',
+    renderer='json',
+)
 
 strip_hook = Service(name='strip_hook',
                         path='strip_hook',
@@ -271,7 +278,6 @@ def post_android_subscription(request):
     payload = {'receipt': request.json_body['receipt']}
     url = get_android_iap_validator_url()
     r = requests.post(url, data=payload)
-    result = None
     if r.status_code == requests.codes.ok:
         response_content = r.text
         response_dict = json.loads(response_content)
@@ -283,13 +289,13 @@ def post_android_subscription(request):
         expire_date = response_dict['expires_date']
         developer_payload = response_dict['developer_payload']
         payout_amount = int(math.ceil(get_iap_sub_price() * get_iap_sub_price_payout_ratio() * 100))/100.0
-        result = UserOperations.handle_membership_update(user,
-                                                         product_id,
-                                                         original_transaction_id,
-                                                         expire_date,
-                                                         developer_payload,
-                                                         "android",
-                                                         payout_amount)
+        UserOperations.handle_membership_update(user,
+                                                product_id,
+                                                original_transaction_id,
+                                                expire_date,
+                                                developer_payload,
+                                                'android',
+                                                payout_amount)
     else:
         raise ValidationError('ERR_IAP_VALIDATOR_CONN')
 
@@ -311,9 +317,81 @@ def post_android_subscription(request):
 
     return {
         "user": user.serialize(),
-        "message": result,
+        "message": 'ok',
         "code": 200
     }
+
+
+@webhook_subscription_android.post()
+def android_subscription_webhook(request):
+    try:
+        encoded_data = request.json_body.get('message').get('data')
+        data = json.loads(base64.b64decode(encoded_data))
+    except Exception:
+        raise ValidationError('ERR_ANDROID_SUBSCRIPTION_WEBHOOK_DECODE_FAILURE')
+
+    default_response = {
+        'code': 200,
+        'message': 'ok',
+    }
+
+    if 'subscriptionNotification' not in data:
+        return default_response
+
+    subscription = data['subscriptionNotification']
+    notification_type = subscription['notificationType']
+
+    log.info('RECEIVE_ANDROID_SUBSCRIPTION_WEBHOOK_TYPE_' + str(notification_type))
+    log.info(json.dumps(subscription))
+
+    if notification_type == 2:
+        log_action = 'subscriptionRenewed'
+    elif notification_type == 3:
+        log_action = 'subscriptionCancelled'
+    else:
+        # Don't care other cases
+        return default_response
+
+    receipt = {
+        'packageName'  : data['packageName'],
+        'productId'    : subscription['subscriptionId'],
+        'purchaseToken': subscription['purchaseToken'],
+        'autoRenewing' : True,
+    }
+
+    payload = {'receipt': json.dumps(receipt)}
+    url = get_android_iap_validator_url()
+    r = requests.post(url, data=payload)
+    if r.status_code != requests.codes.ok:
+        raise ValidationError('ERR_ANDROID_SUBSCRIPTION_WEBHOOK_IAP_VALIDATOR_CONN')
+
+    response_dict = r.json()
+    if response_dict['code'] != 0:
+        raise ValidationError('ERR_ANDROID_SUBSCRIPTION_WEBHOOK_IAP_VALIDATOR_NON_ZERO')
+
+    log.info(r.text)
+
+    product_id              = response_dict['product_id']
+    original_transaction_id = response_dict['original_transaction_id']
+    expire_date             = response_dict['expires_date']
+    developer_payload       = response_dict['developer_payload']
+    user = UserOperations.handle_membership_update(None,
+                                                   product_id,
+                                                   original_transaction_id,
+                                                   expire_date,
+                                                   developer_payload,
+                                                   'android',
+                                                   0)
+
+    log_dict = {
+        'action': log_action,
+        'token': payload,
+    }
+    log_dict = set_basic_info_membership_log(user, log_dict)
+    log_dict = set_basic_info_log(request, log_dict)
+    log_message(KAFKA_TOPIC_USER, log_dict)
+
+    return default_response
 
 
 @membership_ios.post(permission='get')
@@ -386,7 +464,7 @@ def ios_subscribe(request, validator_url):
 
     return {
         "user": user.serialize(),
-        "message": result,
+        "message": 'ok',
         "code": 200
     }
 
