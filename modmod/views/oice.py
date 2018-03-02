@@ -22,6 +22,8 @@ from ..models import (
     DBSession,
     AssetQuery,
     AssetTypeQuery,
+    Attribute,
+    Block,
     FeaturedOice,
     TutorialOice,
     Oice,
@@ -91,7 +93,13 @@ oice_more = Service(name='oice_more',
                   renderer='json',
                   factory=OiceFactory,
                   traverse='/{oice_id}')
-
+oice_id_like = Service(
+    name='oice_id_like',
+    path='v{version}/oice/{oice_id}/like',
+    renderer='json',
+    factory=OiceFactory,
+    traverse='/{oice_id}',
+)
 oice_read = Service(name='oice_read',
                     path='oice/{oice_id}/read',
                     renderer='json',
@@ -874,4 +882,30 @@ def fork_oice_admin(request):
     return {
         'message': 'ok',
         'oice': fork_oice(oice, user).serialize(language=fetch_oice_query_language(request, oice)),
+    }
+
+
+@oice_id_like.post()
+def like_oice(request):
+    oice = request.context
+
+    assets = AssetQuery(DBSession).query \
+                                  .join(Attribute.asset) \
+                                  .join(Attribute.block) \
+                                  .filter(Block.oice_id == oice.id)
+
+    users = {}
+    for a in assets:
+        for u in a.users:
+            if u.id not in users:
+                users[u.id] = {
+                    'assetIds': [],
+                }
+
+            users[u.id]['assetIds'].append(a.id)
+
+    return {
+        'code': 200,
+        'message': 'ok',
+        'users': users
     }

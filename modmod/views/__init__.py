@@ -39,6 +39,7 @@ ios_iap_validator_url = None
 ios_iap_validator_url_v2 = None
 iap_sub_price = None
 iap_sub_price_payout_ratio = None
+likecoin_api_url = None
 voucher_api_url = None
 voucher_api_key = None
 is_production = False
@@ -63,6 +64,7 @@ def includeme(config):
     global android_iap_validator_url
     global ios_iap_validator_url
     global ios_iap_validator_url_v2
+    global likecoin_api_url
     global voucher_api_url
     global voucher_api_key
     global es_log_whitelist
@@ -83,6 +85,8 @@ def includeme(config):
         config.get_settings().get('iapvalidator.ios_url', None)
     ios_iap_validator_url_v2 = \
         config.get_settings().get('iapvalidator.ios_url_v2', None)
+    likecoin_api_url = \
+        config.get_settings().get('likecoin_api.url', None)
     voucher_api_url = \
         config.get_settings().get('voucher_api.url', None)
     voucher_api_key = \
@@ -92,6 +96,7 @@ def includeme(config):
     es_log_whitelist = [path for path in es_log_whitelist_str.split(',')]
     es_log_key = config.get_settings().get('eslog.key', '')
     is_production = config.get_settings().get('isProduction', '') == 'true'
+
 
 def get_intercom_secret_key():
     global intercom_secret_key
@@ -162,6 +167,14 @@ def get_iap_sub_price_payout_ratio():
         return iap_sub_price_payout_ratio
     else:
         return 0.7
+
+
+def get_likecoin_api_url():
+    global likecoin_api_url
+    if likecoin_api_url is not None:
+        return likecoin_api_url
+    else:
+        return None
 
 
 def get_voucher_api_url():
