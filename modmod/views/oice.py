@@ -445,11 +445,13 @@ def set_oice_progress(request):
 
         progress = UserReadOiceProgress(user_id=user.id, oice_id=oice.id)
 
-    progress.is_finished = request.json_body.get('isFinished', False)
+    is_finished_oice = request.json_body.get('isFinished', False)
+    if not progress.is_finished:
+        progress.is_finished = is_finished_oice
     progress.updated_at = datetime.datetime.utcnow()  # Force update the update_at even no value changes
 
     log_dict = {
-        'action'     : 'readOice' if progress.is_finished else 'viewOice',
+        'action'     : 'readOice' if is_finished_oice else 'viewOice',
         'description': oice.og_description,
         'order'      : oice.order,
         'updatedAt'  : oice.updated_at.isoformat(),
