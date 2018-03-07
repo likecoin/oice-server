@@ -42,6 +42,7 @@ iap_sub_price_payout_ratio = None
 likecoin_api_url = None
 voucher_api_url = None
 voucher_api_key = None
+cloud_function_api_base_url = None
 is_production = False
 
 
@@ -67,6 +68,7 @@ def includeme(config):
     global likecoin_api_url
     global voucher_api_url
     global voucher_api_key
+    global cloud_function_api_base_url
     global es_log_whitelist
     global es_log_key
     global is_production
@@ -91,6 +93,8 @@ def includeme(config):
         config.get_settings().get('voucher_api.url', None)
     voucher_api_key = \
         config.get_settings().get('voucher_api.key', None)
+    cloud_function_api_base_url = \
+        config.get_settings().get('oice.cloud_function_api_base_url', None)
     es_log_whitelist_str = \
         config.get_settings().get('eslog.whitelist', None)
     es_log_whitelist = [path for path in es_log_whitelist_str.split(',')]
@@ -189,6 +193,14 @@ def get_voucher_api_key():
     global voucher_api_key
     if voucher_api_key is not None:
         return voucher_api_key
+    else:
+        return None
+
+
+def get_cloud_function_api_base_url():
+    global cloud_function_api_base_url
+    if cloud_function_api_base_url is not None:
+        return cloud_function_api_base_url
     else:
         return None
 
