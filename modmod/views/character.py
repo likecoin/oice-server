@@ -91,12 +91,13 @@ def create_character(request):
     library_id = request.matchdict['library_id']
 
     try:
-        name       = request.json_body.get('name', None)
-        width      = request.json_body.get("width", 1080)
-        height     = request.json_body.get("height", 1080)
-        is_generic = request.json_body.get("isGeneric", False)
-        order      = int(request.json_body.get("order", 0)) - 1
-        config     = json.dumps(request.json_body.get("config", {}), sort_keys=True)
+        name        = request.json_body.get('name', None)
+        description = request.json_body.get('description', None)
+        width       = request.json_body.get("width", 1080)
+        height      = request.json_body.get("height", 1080)
+        is_generic  = request.json_body.get("isGeneric", False)
+        order       = int(request.json_body.get("order", 0)) - 1
+        config      = json.dumps(request.json_body.get("config", {}), sort_keys=True)
 
     except ValueError as e:
         raise ValidationError('Request object is invalid')
@@ -105,6 +106,7 @@ def create_character(request):
         character = Character(
             library_id=library_id,
             name=name,
+            description=description,
             width=width,
             height=height,
             is_generic=is_generic,
@@ -158,6 +160,9 @@ def edit_character(request):
 
         if 'name' in request.json_body:
             character.set_name(request.json_body['name'], query_language)
+
+        if 'description' in request.json_body:
+            character.description = request.json_body['description']
 
         for key in ['width', 'order', 'height']:
             if key in request.json_body:

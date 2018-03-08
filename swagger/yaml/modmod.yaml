@@ -861,7 +861,7 @@ paths:
         description: The offset of the stories returns
         required: false
         type: integer
-        format: int32      
+        format: int32
       - name: limit
         in: query
         description: The limit of the number stories returns
@@ -4221,7 +4221,7 @@ definitions:
         type: string
       ogImage:
         $ref: '#/definitions/ogImage'
-      locale:
+      language:
         type: string
       isShowAd:
         type: boolean
@@ -4424,7 +4424,7 @@ definitions:
         type: integer
       name:
         type: string
-      key:
+      description:
         type: string
       order:
         type: integer
