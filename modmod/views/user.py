@@ -53,6 +53,7 @@ from .util import (
 )
 from . import (
     get_likecoin_api_url,
+    get_cloud_function_api_base_url,
     get_intercom_secret_key,
     get_is_production,
     set_basic_info_user_log,
@@ -483,7 +484,21 @@ def connect_like_coin(request):
         address = str(request.json_body.get('address', ''))
         signature = request.json_body.get('signature')
 
-        # TODO: Verify signature
+        # Signature verification
+        headers = {
+            'Content-type': 'application/json',
+            'Accept': 'text/plain',
+        }
+        verification_payload = {
+            'userId': user.id,
+            'address': address,
+            'signature': signature,
+        }
+        r = requests.post(get_cloud_function_api_base_url() + '/checkSignedLikeCoinAddress',
+                            data=json.dumps(verification_payload),
+                            headers=headers)
+        if r.status_code != requests.codes.ok:
+            raise ValidationError('ERR_LIKECOIN_ADDRESS_UNABLE_TO_VERIFY')
 
         r = requests.get(get_likecoin_api_url() + '/users/addr/' + address)
         if r.status_code != requests.codes.ok:
