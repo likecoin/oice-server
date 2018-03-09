@@ -511,6 +511,11 @@ def connect_like_coin(request):
 
     if not user.like_coin_id:
         try:
+            user.username = like_coin_id
+            session.flush()
+        except IntegrityError:
+            raise ValidationError('ERR_LIKECOIN_CONNECT_USER_ID_DUPLICATED')
+        try:
             user.like_coin_id = like_coin_id
             session.flush()
         except IntegrityError:
