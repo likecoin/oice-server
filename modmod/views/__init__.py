@@ -39,8 +39,10 @@ ios_iap_validator_url = None
 ios_iap_validator_url_v2 = None
 iap_sub_price = None
 iap_sub_price_payout_ratio = None
+likecoin_api_url = None
 voucher_api_url = None
 voucher_api_key = None
+cloud_function_api_base_url = None
 is_production = False
 
 
@@ -63,8 +65,10 @@ def includeme(config):
     global android_iap_validator_url
     global ios_iap_validator_url
     global ios_iap_validator_url_v2
+    global likecoin_api_url
     global voucher_api_url
     global voucher_api_key
+    global cloud_function_api_base_url
     global es_log_whitelist
     global es_log_key
     global is_production
@@ -83,15 +87,20 @@ def includeme(config):
         config.get_settings().get('iapvalidator.ios_url', None)
     ios_iap_validator_url_v2 = \
         config.get_settings().get('iapvalidator.ios_url_v2', None)
+    likecoin_api_url = \
+        config.get_settings().get('likecoin_api.url', None)
     voucher_api_url = \
         config.get_settings().get('voucher_api.url', None)
     voucher_api_key = \
         config.get_settings().get('voucher_api.key', None)
+    cloud_function_api_base_url = \
+        config.get_settings().get('oice.cloud_function_api_base_url', None)
     es_log_whitelist_str = \
         config.get_settings().get('eslog.whitelist', None)
     es_log_whitelist = [path for path in es_log_whitelist_str.split(',')]
     es_log_key = config.get_settings().get('eslog.key', '')
     is_production = config.get_settings().get('isProduction', '') == 'true'
+
 
 def get_intercom_secret_key():
     global intercom_secret_key
@@ -164,6 +173,14 @@ def get_iap_sub_price_payout_ratio():
         return 0.7
 
 
+def get_likecoin_api_url():
+    global likecoin_api_url
+    if likecoin_api_url is not None:
+        return likecoin_api_url
+    else:
+        return None
+
+
 def get_voucher_api_url():
     global voucher_api_url
     if voucher_api_url is not None:
@@ -176,6 +193,14 @@ def get_voucher_api_key():
     global voucher_api_key
     if voucher_api_key is not None:
         return voucher_api_key
+    else:
+        return None
+
+
+def get_cloud_function_api_base_url():
+    global cloud_function_api_base_url
+    if cloud_function_api_base_url is not None:
+        return cloud_function_api_base_url
     else:
         return None
 

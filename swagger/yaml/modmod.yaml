@@ -358,6 +358,44 @@ paths:
           description: The item you are looking for cannot be found
           schema:
             $ref: '#/definitions/ErrorItemNotFound'
+  /likecoin/connect:
+    post:
+      summary: Connect LikeCoin account
+      parameters:
+      - name: body
+        description: ios iap receipt
+        in: body
+        required: true
+        schema:
+          properties:
+            likeCoinId:
+              type: string
+            address:
+              type: string
+            signature:
+              type: string
+      tags:
+      - User
+      - LikeCoin
+      responses:
+        200:
+          description: User
+          schema:
+            properties:
+              user:
+                $ref: '#/definitions/User'
+              message:
+                type: string
+              code:
+                type: integer
+        400:
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorInvalid'
+        401:
+          description: You have to login to view this item
+          schema:
+            $ref: '#/definitions/ErrorLoginIsNeeded'
   /v1/voucher/redeem/{voucher_code}:
     post:
       summary: Redeem a voucher

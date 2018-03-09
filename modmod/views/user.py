@@ -9,6 +9,7 @@ import re
 from collections import defaultdict
 from operator import attrgetter
 from cornice import Service
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import false
 from sqlalchemy import func
@@ -51,6 +52,8 @@ from .util import (
     normalize_ui_language,
 )
 from . import (
+    get_likecoin_api_url,
+    get_cloud_function_api_base_url,
     get_intercom_secret_key,
     get_is_production,
     set_basic_info_user_log,
@@ -74,6 +77,11 @@ profile = Service(name='profile',
 profile_username_check = Service(name='profile_username_check',
                   path='profile/username/check',
                   renderer='json')
+likecoin_connect = Service(
+    name='likecoin_connect',
+    path='likecoin/connect',
+    renderer='json',
+)
 credits = Service(name='credits',
                   path='credits/user/{user_id}',
                   renderer='json',
@@ -95,7 +103,6 @@ user_id_profile_details = Service(name='user_id_profile_details',
 user_status = Service(name='user_status',
                     path='user/status',
                     renderer='json')
-
 
 @login.post()
 def login_user(request):
@@ -458,6 +465,69 @@ def check_username_valid(request):
     return {
         "code": 200,
         "message": "ok",
+    }
+
+
+@likecoin_connect.post(permission='get')
+def connect_like_coin(request):
+    session = DBSession()
+    user = UserQuery(session).fetch_user_by_email(email=request.authenticated_userid).one()
+
+    if 'likeCoinId' in request.json_body:
+        like_coin_id = str(request.json_body.get('likeCoinId', ''))
+
+        r = requests.get(get_likecoin_api_url() + '/users/id/' + like_coin_id)
+        if r.status_code != requests.codes.ok:
+            raise ValidationError('ERR_LIKECOIN_CONNECT_INVALID_ID')
+
+    elif 'address' in request.json_body and 'signature' in request.json_body:
+        address = str(request.json_body.get('address', ''))
+        signature = request.json_body.get('signature')
+
+        # Signature verification
+        headers = {
+            'Content-type': 'application/json',
+            'Accept': 'text/plain',
+        }
+        verification_payload = {
+            'userId': user.id,
+            'address': address,
+            'signature': signature,
+        }
+        r = requests.post(get_cloud_function_api_base_url() + '/checkSignedLikeCoinAddress',
+                            data=json.dumps(verification_payload),
+                            headers=headers)
+        if r.status_code != requests.codes.ok:
+            raise ValidationError('ERR_LIKECOIN_ADDRESS_UNABLE_TO_VERIFY')
+
+        r = requests.get(get_likecoin_api_url() + '/users/addr/' + address)
+        if r.status_code != requests.codes.ok:
+            raise ValidationError('ERR_LIKECOIN_CONNECT_INVALID_ADDRESS')
+
+        like_coin_id = r.json().get('user')
+
+    else:
+        raise ValidationError('ERR_LIKECOIN_CONNECT_MISSING_PARAMS')
+
+    if not user.like_coin_id:
+        try:
+            user.username = like_coin_id
+            session.flush()
+        except IntegrityError:
+            raise ValidationError('ERR_LIKECOIN_CONNECT_USER_ID_DUPLICATED')
+        try:
+            user.like_coin_id = like_coin_id
+            session.flush()
+        except IntegrityError:
+            raise ValidationError('ERR_LIKECOIN_CONNECT_DUPLICATED')
+
+    elif user.like_coin_id != like_coin_id:
+        raise ValidationError('ERR_LIKECOIN_CONNECT_ALREADY')
+
+    return {
+        'code': 200,
+        'message': 'ok',
+        'user': user.serialize(),
     }
 
 
