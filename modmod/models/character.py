@@ -26,6 +26,7 @@ class Character(Base, BaseMixin):
     __tablename__ = 'character'
 
     name = sa.Column(sa.Unicode(1024), nullable=False)
+    description = sa.Column(sa.Unicode(1024), nullable=False, server_default='')
     library_id = sa.Column(sa.Integer, sa.ForeignKey('library.id'))
     uuid = sa.Column(sa.Unicode(128), nullable=False, unique=True)
     order = sa.Column(sa.Integer, nullable=False, server_default='0')
@@ -116,6 +117,7 @@ class Character(Base, BaseMixin):
             "id": self.id,
             "libraryId": self.library_id,
             "name": self.get_name(language),
+            "description": self.description,
             "order": self.order,
             "width": self.width,
             "height": self.height,
