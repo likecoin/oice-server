@@ -138,6 +138,7 @@ class User(Base, BaseMixin):
             'description': self.description,
             'seekingSubscriptionMessage': self.seeking_subscription_message,
             'avatar': self.avatar_url(),
+            'likeCoinId': self.like_coin_id,
         }
 
     def avatar_url(self):
