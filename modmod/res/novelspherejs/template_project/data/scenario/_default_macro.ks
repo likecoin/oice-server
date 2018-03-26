@@ -16,7 +16,11 @@ tf._getDefaultDialogMessageLayerSetting = function (override) {
     lineHeight: tf.oiceDefaults.fontSize + tf.oiceDefaults.lineSpacing
   };
 
-  setting.top = VIEW_SIZE - setting.height;
+  if (ev.query.orientation === 'portrait') {
+    setting.top = tf.oiceDefaults.portraitHeight - setting.height;
+  } else {
+    setting.top = VIEW_SIZE - setting.height;
+  }
 
   if (override) {
       setting = Object.assign(setting, override)
@@ -185,7 +189,11 @@ tf._glyph = function () {
 tf._dialog = tf._getDefaultDialogMessageLayerSetting();
 if (mp.fullscreen == "true") {
   tf._dialog.top = 0;
-  tf._dialog.height = tf.oiceDefaults.viewSize;
+  if (ev.query.orientation === 'portrait') {
+    tf._dialog.height = tf.oiceDefaults.portraitHeight;
+  } else {
+    tf._dialog.height = tf.oiceDefaults.viewSize;
+  }
   tf._dialog.margin.top = tf.oiceDefaults.messageLayer.height;
 }
 tf._dialog.page = mp.fadein === 'true' ? 'back' : 'fore';
@@ -264,7 +272,11 @@ if (!tf._characterdialog) {
       fontSize: 40 * FACTOR,
     };
 
-    nameSetting.top = messageSetting.top - nameSetting.height;
+    if (ev.query.orientation === 'portrait') {
+      nameSetting.top = VIEW_SIZE;
+    } else {
+      nameSetting.top = messageSetting.top - nameSetting.height;
+    }
 
     return {
       name: nameSetting,

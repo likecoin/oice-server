@@ -1,9 +1,11 @@
 SCREEN_SIZE = 1080
+PORTRAIT_HEIGHT = SCREEN_SIZE * 4 / 3
 
 NOVELSPHERE_CONFIG = {
     'title': 'oice',
     'scWidth': SCREEN_SIZE,
     'scHeight': SCREEN_SIZE,
+    'scPortraitHeight': int(PORTRAIT_HEIGHT),
     'gameID': None,
     'chSpeeds': 10,
     'numImageLayers': 5,
@@ -101,6 +103,7 @@ NOVELSPHERE_CONFIG = {
 SCALABLE_CONFIG_ITEMS = [
     'scWidth',
     'scHeight',
+    'scPortraitHeight',
     'scPositionX_left',
     'scPositionX_left_center',
     'scPositionX_center',

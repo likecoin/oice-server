@@ -316,6 +316,7 @@ class ScriptExporter(object):
         oice_defaults = {
             # General
             'viewSize': config['scHeight'],
+            'portraitHeight': config['scPortraitHeight'],
             'scaleFactor': self.scale_factor,
             'communicationURL': self.oice_communication_url,
             # Text
