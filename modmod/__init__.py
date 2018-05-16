@@ -58,6 +58,8 @@ def main(global_config, **settings):
     """
     authn_policy = AuthTktAuthenticationPolicy(
         settings['auth.secret'],
+        secure=True,
+        http_only=True,
         timeout=int(settings['auth.timeout']),
         max_age=int(settings['auth.timeout']),
         callback=groupfinder
