@@ -672,7 +672,8 @@ def get_app_story_progress(request):
 
     # Get progress in last viewed ordering
     progress = UserReadOiceProgressQuery(DBSession).fetch_by_user_id_and_story(user.id, story) \
-                                                   .filter(UserReadOiceProgress.is_finished)
+                                                   .filter(UserReadOiceProgress.is_finished) \
+                                                   .all()
 
     already_read_oice_ids = set(p.oice_id for p in progress)
 
@@ -681,7 +682,7 @@ def get_app_story_progress(request):
     except StopIteration:
         # Return last viewed oice if all oices have read and the last viewed oice is not the last episode
         # otherwise, return the first episode of the story instead
-        oice = progress[0].oice if progress[0].oice.order != len(story.oice) - 1 else story.oice[0]
+        oice = progress[0].oice if progress and progress[0].oice.order != len(story.oice) - 1 else story.oice[0]
 
     return {
         'code': 200,
