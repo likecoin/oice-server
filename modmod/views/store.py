@@ -104,14 +104,9 @@ def serialize_libraries_with_purchased(libraries, user):
         purchased_library_ids = set([r[0] for r in result])
 
         for l in libraries:
-            # Inject isPurchased flag
-            is_purchased = l.id in purchased_library_ids
-            if is_purchased:
-                purchased_library_ids.remove(l.id)
-
             result_libraries.append({
                 **l.serialize_min(),
-                'isPurchased': is_purchased,
+                'isPurchased': l.id in purchased_library_ids,  # Inject isPurchased flag
             })
 
     return result_libraries
