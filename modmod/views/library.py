@@ -123,11 +123,17 @@ def list_library(request):
         elif t == 'selected':
             selected = user_purchased_libraries_set.intersection(user_selected_libraries_set)
             selected = sorted(selected, key=attrgetter("name"))
-            response['selected'] = [library.serialize(user) for library in selected]
+            response['selected'] = [{
+                **library.serialize(user),
+                'isSelected': True,
+            } for library in selected]
         elif t == 'unselected':
             unselected = user_purchased_libraries_set - user_selected_libraries_set
             unselected = sorted(unselected, key=attrgetter("name"))
-            response['unselected'] = [library.serialize(user) for library in unselected]
+            response['unselected'] = [{
+                **library.serialize(user),
+                'isSelected': False,
+            } for library in unselected]
 
     return response
 

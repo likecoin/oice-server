@@ -123,7 +123,6 @@ class Library(Base, BaseMixin):
         serialized_library['author'] = self.users[0].serialize_min() if self.users else None  # Assume user[0] is the author
         serialized_library['updatedAt'] = self.updated_at.isoformat()
         serialized_library['launchedAt'] = self.launched_at.isoformat() if self.launched_at else None
-        serialized_library['isSelected'] = self.has_user_selected(user)
         return serialized_library
 
     def serialize_profile(self):
