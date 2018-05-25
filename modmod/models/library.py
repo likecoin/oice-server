@@ -116,13 +116,14 @@ class Library(Base, BaseMixin):
             'cover': self.cover_storage_url,
         }
 
-    def serialize(self, user=None):
+    def serialize(self, user=None, isSelected=False):
         serialized_library = self.serialize_min()
         serialized_library['description'] = self.description
         serialized_library['isCollaborator'] = user in self.users
         serialized_library['author'] = self.users[0].serialize_min() if self.users else None  # Assume user[0] is the author
         serialized_library['updatedAt'] = self.updated_at.isoformat()
         serialized_library['launchedAt'] = self.launched_at.isoformat() if self.launched_at else None
+        serialized_library['isSelected'] = isSelected
         return serialized_library
 
     def serialize_profile(self):
