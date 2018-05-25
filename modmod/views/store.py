@@ -94,35 +94,52 @@ def get_store_price(request):
         'priceTiers': [o.serialize() for o in price_tier]
     }
 
+
+def serialize_libraries_with_purchased(libraries, user):
+    result_libraries = []
+
+    if libraries:
+        session = DBSession()
+        result = session.execute('SELECT library_id FROM user_purchased_library WHERE user_id = %d' % user.id)
+        purchased_library_ids = set([r[0] for r in result])
+
+        for l in libraries:
+            result_libraries.append({
+                **l.serialize_min(),
+                'isPurchased': l.id in purchased_library_ids,  # Inject isPurchased flag
+            })
+
+    return result_libraries
+
+
 @store_library.get()
 def list_library(request):
-
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
-    reply = { "message": "ok", "code": 200 }
-    libraries = []
+    reply = {"message": "ok", "code": 200}
+
     if 'offset' in request.GET and 'limit' in request.GET:
-      offset = request.GET['offset']
-      limit = request.GET['limit']
-      totalCount = LibraryQuery(DBSession).count_store_libs().scalar()
-      reply['totalPages'] = math.ceil(int(totalCount)/int(limit))
-      libraries = LibraryQuery(DBSession).fetch_store_libs()\
+        offset = request.GET['offset']
+        limit = request.GET['limit']
+        total_count = LibraryQuery(DBSession).count_store_libs().scalar()
+        reply['totalPages'] = math.ceil(int(total_count)/int(limit))
+        libraries = LibraryQuery(DBSession).fetch_store_libs()\
                   .options(joinedload(Library.purchased_users))\
                   .order_by(Library.updated_at.desc())\
                   .offset(offset).limit(limit)
-      reply['pageNumber'] = int(int(offset)/int(limit) + 1)
+        reply['pageNumber'] = int(int(offset)/int(limit) + 1)
     else:
-      libraries = LibraryQuery(DBSession).fetch_store_libs()\
+        libraries = LibraryQuery(DBSession).fetch_store_libs()\
                 .options(joinedload(Library.purchased_users))\
                 .order_by(Library.updated_at.desc())
-    reply['libraries'] = [l.serialize_store(user) for l in libraries]
+
+    reply['libraries'] = serialize_libraries_with_purchased(libraries, user)
     return reply
+
 
 @store_library_list_free.get()
 def list_free_library(request):
-
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
-    reply = { "message": "ok", "code": 200 }
-    libraries = []
+    reply = {"message": "ok", "code": 200}
     if 'offset' in request.GET and 'limit' in request.GET:
       offset = request.GET['offset']
       limit = request.GET['limit']
@@ -145,32 +162,34 @@ def list_free_library(request):
                   .options(contains_eager(Library.purchased_users))\
                   .order_by(func.count(User.id).desc())\
                   .group_by(Library.id)
-    reply['libraries'] = [l.serialize_store(user) for l in libraries]
+
+    reply['libraries'] = serialize_libraries_with_purchased(libraries, user)
     return reply
+
 
 @store_library_list_latest.get()
 def list_latest_library(request):
-
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
-    reply = { "message": "ok", "code": 200 }
-    libraries = []
+    reply = {"message": "ok", "code": 200}
     if 'offset' in request.GET and 'limit' in request.GET:
-      offset = request.GET['offset']
-      limit = request.GET['limit']
-      totalCount = LibraryQuery(DBSession).count_store_libs().scalar()
-      reply['totalPages'] = math.ceil(int(totalCount)/int(limit))
-      libraries = LibraryQuery(DBSession).fetch_store_libs()\
+        offset = request.GET['offset']
+        limit = request.GET['limit']
+        total_count = LibraryQuery(DBSession).count_store_libs().scalar()
+        reply['totalPages'] = math.ceil(int(total_count)/int(limit))
+        libraries = LibraryQuery(DBSession).fetch_store_libs()\
                 .options(joinedload(Library.purchased_users))\
                 .order_by(Library.launched_at.desc())\
                 .offset(offset).limit(limit)
-      reply['pageNumber'] = int(int(offset)/int(limit) + 1)
+        reply['pageNumber'] = int(int(offset)/int(limit) + 1)
     else:
-      libraries = LibraryQuery(DBSession).fetch_store_libs()\
+        libraries = LibraryQuery(DBSession).fetch_store_libs()\
                 .options(joinedload(Library.purchased_users))\
                 .order_by(Library.launched_at.desc())
-    reply['libraries'] = [l.serialize_store(user) for l in libraries]
+
+    reply['libraries'] = serialize_libraries_with_purchased(libraries, user)
     return reply
+
 
 @store_library_list_featured.get()
 def get_featured_library_list(request):
@@ -188,26 +207,30 @@ def get_featured_library_list(request):
         'list': [lst.serialize(query_language) for lst in featured_library_list],
     }
 
+
 @store_library_list_featured_type.get()
 def list_featured_library_type(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
 
     request_list_type = request.matchdict['type']
+    featured_library_list = FeaturedLibraryListQuery(DBSession).get_library_by_alias(request_list_type)
 
-    featured_library_list = FeaturedLibraryListQuery(DBSession) \
-                                .get_library_by_alias(request_list_type)
+    libraries = []
+    if featured_library_list:
+        libraries = serialize_libraries_with_purchased([fl.library for fl in featured_library_list.libraries], user)
 
     return {
         'code': 200,
         'message': 'ok',
-        'libraries': [l.library.serialize_store(user) for l in featured_library_list.libraries] if featured_library_list else [],
+        'libraries': libraries,
     }
+
 
 @store_library_id.get()
 def fetch_library(request):
 
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
-    library = request.context;
+    library = request.context
 
     log_dict = {
         'action': 'viewLibrary',
