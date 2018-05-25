@@ -81,13 +81,13 @@ def list_library(request):
 
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
-    query_types = request.GET.get('type')
+    query_types = request.GET.getall('type')
     if query_types:
-        query_types = query_types.lower()
+        query_types = [type.lower() for type in query_types]
 
     # if type is not specified, return all types of library data
     all_types = ['public', 'private', 'forsale', 'selected', 'unselected']
-    query_types = query_types.split(" ") if query_types else all_types
+    query_types = query_types or all_types
 
     response = {
         "message": "ok",
