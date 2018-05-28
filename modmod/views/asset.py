@@ -86,7 +86,8 @@ def list_asset(request):
 
     assets = [asset.serialize() for library in user.libraries_selected \
                 for asset in library.asset \
-                if not asset.is_hidden or user in library.users]
+                if (not asset.is_hidden or user in library.users)
+                and (asset.asset_types and asset.asset_types[0].folder_name != 'fgimage')]
 
     return {
         'code': 200,
