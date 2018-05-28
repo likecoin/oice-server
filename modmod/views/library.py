@@ -270,7 +270,7 @@ def add_selected_library_to_user(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
     library_to_be_added = request.context
-    if user in library_to_be_added.purchased_users:
+    if library_to_be_added.has_user_purchased(user):
         user.libraries_selected.append(library_to_be_added)
     else:
         raise ValidationError('ERR_ADD_NOT_PURCHASED_LIBRARY_TO_LIBRARIES_SELECTED')
@@ -285,7 +285,7 @@ def remove_selected_library_from_user(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
     library_to_be_removed = request.context
-    if user in library_to_be_removed.purchased_users:
+    if library_to_be_removed.has_user_purchased(user):
         user.libraries_selected.remove(library_to_be_removed)
     else:
         raise ValidationError('ERR_REMOVE_NOT_PURCHASED_LIBRARY_FROM_LIBRARIES_SELECTED')
