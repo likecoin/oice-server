@@ -98,6 +98,7 @@ class Library(Base, BaseMixin):
         return {
             'id': self.id,
             'name': self.name,
+            'description': self.description,
             'cover': self.cover_storage_url,
             'coverStorage': self.cover_storage_url, # Deprecated
             'price': self.price,
@@ -142,7 +143,6 @@ class Library(Base, BaseMixin):
 
     def serialize_store_detail(self, user=None):
         serialized_store = self.serialize_store(user)
-        serialized_store['description'] = self.description
         serialized_store['createdAt'] = self.created_at.isoformat()
         serialized_store['updatedAt'] = self.updated_at.isoformat()
         serialized_store['launchedAt'] = self.launched_at.isoformat() if self.launched_at else None
