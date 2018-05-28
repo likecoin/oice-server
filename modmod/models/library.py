@@ -9,6 +9,7 @@ from sqlalchemy.sql.expression import true, false
 from sqlalchemy.orm import lazyload
 from pyramid.security import Allow
 from pyramid_safile import FileHandleStore
+from .user import User
 from .user_library import user_library
 from .user_purchased_library import user_purchased_library
 from .user_selected_library import user_selected_library
@@ -158,10 +159,20 @@ class Library(Base, BaseMixin):
         return credits
 
     def has_user_purchased(self, user):
-        return user in self.purchased_users
+        return LibraryQuery(DBSession) \
+                   .query \
+                   .join(Library.purchased_users) \
+                   .filter(User.id == user.id) \
+                   .filter(Library.id == self.id) \
+                   .count() > 0
 
     def has_user_selected(self, user):
-        return user in self.selected_users
+        return LibraryQuery(DBSession) \
+                   .query \
+                   .join(Library.selected_users) \
+                   .filter(User.id == user.id) \
+                   .filter(Library.id == self.id) \
+                   .count() > 0
 
     @property
     def is_new(self):
