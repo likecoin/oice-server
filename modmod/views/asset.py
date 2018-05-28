@@ -84,9 +84,12 @@ def list_asset(request):
 def list_asset(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
-    assets = [asset.serialize() for library in user.libraries_selected \
-                for asset in library.asset \
-                if not asset.is_hidden or user in library.users]
+    assets = [a.serialize()
+              for library in user.libraries_selected
+              for a in library.asset
+              if (not a.is_hidden or user in library.users)
+              and a.asset_types
+              and a.asset_types[0].folder_name != 'fgimage']
 
     return {
         'code': 200,

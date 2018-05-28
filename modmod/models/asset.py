@@ -59,7 +59,6 @@ class Asset(Base, BaseMixin):
             'nameJp': self.name_jp,
             'libraryId': self.library_id,
             'types': [type_.serialize() for type_ in self.asset_types],
-            'contentType': self.content_type,
             'url': self.url(),
             'order': self.order,
             'users': [user.serialize_min() for user in self.users] if self.users else None,
