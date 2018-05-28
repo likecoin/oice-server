@@ -240,7 +240,7 @@ def fetch_library(request):
     log_dict = set_basic_info_membership_log(user, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_LIBRARY, log_dict)
-    
+
     return {
         'library': library.serialize_store_detail(user),
         'message': "ok",
@@ -329,12 +329,6 @@ def purchase_library(request):
         log_dict = set_basic_info_membership_log(user, log_dict)
         log_dict = set_basic_info_log(request, log_dict)
         log_message(KAFKA_TOPIC_LIBRARY, log_dict)
-
-        return {
-            'library': library.serialize_store_detail(user),
-            'message': "ok",
-            'code': 200
-        }
     else:
         if not library.users or not library.users[0].stripe_account_id:
             raise ValidationError('ERR_LIBRARY_NOT_CONNECTED')
@@ -383,8 +377,8 @@ def purchase_library(request):
         log_dict = set_basic_info_log(request, log_dict)
         log_message(KAFKA_TOPIC_LIBRARY, log_dict)
 
-        return {
-            'library': library.serialize_store_detail(user),
-            'message': "ok",
-            'code': 200
-        }
+    return {
+        'code': 200,
+        'message': "ok",
+        'library': library.serialize_min(),
+    }
