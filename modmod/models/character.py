@@ -3,10 +3,9 @@ import sqlalchemy as sa
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy.sql.expression import true, false
+from sqlalchemy.sql.expression import func, true, false
 from pyramid.security import Allow
-import json
-from io import StringIO
+
 from modmod.models.base import (
     Base,
     BaseMixin,
@@ -18,6 +17,8 @@ log = logging.getLogger(__name__)
 
 from .character_fgimages import character_fgimages
 from .character_localization import CharacterLocalization
+from .library import Library
+from .user import User
 from . import DBSession
 from ..operations.script_export_default import CHARACTER_CONFIG
 
@@ -110,22 +111,40 @@ class Character(Base, BaseMixin):
     def supported_languages(self):
         return [k for k in self.localizations.keys()].append(self.language)
 
-    def serialize(self, language=None, user=None):
-        is_library_author = user in self.library.users if user else False
+    def is_author(self, user):
+        return user in self.library.users if user else False
 
+    def serialize_min(self, language=None):
         return {
             "id": self.id,
             "libraryId": self.library_id,
             "name": self.get_name(language),
-            "description": self.description,
-            "order": self.order,
             "width": self.width,
             "height": self.height,
             "config": self.getJSONConfig(),
             "isGeneric": self.is_generic,
-            "fgimages": [fgimage.serialize() for fgimage in self.fgimages \
-                            if not fgimage.is_hidden or is_library_author],
         }
+
+    def serialize_editor(self, language=None, user=None):
+        is_library_author = self.is_author(user)
+        return {
+            **self.serialize_min(language=language),
+            "fgimages": [fg.serialize_min()
+                         for fg in self.fgimages
+                         if not fg.is_hidden or is_library_author],
+        }
+
+    def serialize(self, language=None, user=None):
+        is_library_author = self.is_author(user)
+        return {
+            **self.serialize_min(language=language),
+            "description": self.description,
+            "order": self.order,
+            "fgimages": [fg.serialize()
+                         for fg in self.fgimages
+                         if not fg.is_hidden or is_library_author],
+        }
+
 
 class CharacterFactory(object):
 
@@ -137,6 +156,7 @@ class CharacterFactory(object):
                      .filter(Character.id == key) \
                      .one()
         return one
+
 
 class CharacterQuery:
 
@@ -156,10 +176,11 @@ class CharacterQuery:
         return self.fetch_by_ids(used_character_ids)
 
     def fetch_character_list_by_user_selected(self, user):
-        library_id = [library.id for library in user.libraries_selected]
         return self.query \
-                   .filter(Character.library_id.in_(library_id)) \
-                   .filter(Character.is_deleted == False) \
+                   .filter(Character.is_deleted == false()) \
+                   .join(Character.library) \
+                   .join(Library.selected_users) \
+                   .filter(User.id == user.id) \
                    .order_by(Character.library_id) \
                    .order_by(Character.order)
 
