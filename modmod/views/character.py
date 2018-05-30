@@ -47,16 +47,13 @@ def fetch_characters(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
     characters = CharacterQuery(DBSession).fetch_character_list_by_user_selected(user=user)
-    serialized_characters = []
-    for character in characters:
-        serialized_character = character.serialize(query_language, user)
-        if serialized_character['fgimages']:
-            serialized_characters.append(serialized_character)
 
     return {
         'code': 200,
         'message': 'ok',
-        'characters': serialized_characters,
+        'characters': [c.serialize_editor(query_language, user)
+                       for c in characters
+                       if len(c.fgimages) > 0],
     }
 
 

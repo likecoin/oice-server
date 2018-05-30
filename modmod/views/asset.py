@@ -7,6 +7,7 @@ from pyramid.httpexceptions import HTTPFound
 import pyramid_safile
 from cornice import Service
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import false, or_
 from pyramid.httpexceptions import HTTPForbidden
 from modmod.exc import ValidationError
 
@@ -19,6 +20,7 @@ from ..models import (
     CharacterQuery,
     LibraryFactory,
     LibraryQuery,
+    Library,
     StoryQuery,
     User,
     UserQuery,
@@ -84,16 +86,17 @@ def list_asset(request):
 def list_asset(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
-    assets = [a.serialize()
-              for library in user.libraries_selected
-              for a in library.asset
-              if (not a.is_hidden or user in library.users)
-              and a.asset_types
-              and a.asset_types[0].folder_name != 'fgimage']
+    assets = AssetQuery(DBSession).query \
+        .join(Asset.library) \
+        .join(Library.selected_users) \
+        .filter(User.id == user.id) \
+        .filter(or_(Asset.is_hidden == false(), Library.users.any(User.id == user.id))) \
+        .join(Asset.asset_types) \
+        .filter(AssetType.folder_name.notin_(['fgimage']))
 
     return {
         'code': 200,
-        'assets': assets
+        'assets': [a.serialize_min() for a in assets]
     }
 
 

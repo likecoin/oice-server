@@ -51,18 +51,23 @@ class Asset(Base, BaseMixin):
         backref='assets'
     )
 
-    def serialize(self):
+    def serialize_min(self):
         return {
             'id': self.id,
             'nameTw': self.name_tw,
             'nameEn': self.name_en,
             'nameJp': self.name_jp,
             'libraryId': self.library_id,
-            'types': [type_.serialize() for type_ in self.asset_types],
             'url': self.url(),
+            'types': [type_.serialize() for type_ in self.asset_types],
+        }
+
+    def serialize(self):
+        return {
+            **self.serialize_min(),
+            'creditsUrl': self.credits_url,
             'order': self.order,
             'users': [user.serialize_min() for user in self.users] if self.users else None,
-            'creditsUrl': self.credits_url,
         }
 
     @property
