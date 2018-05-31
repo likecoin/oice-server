@@ -159,6 +159,8 @@ class Library(Base, BaseMixin):
         return credits
 
     def has_user_purchased(self, user):
+        if user is None:
+            return False
         return LibraryQuery(DBSession) \
                    .query \
                    .join(Library.purchased_users) \
@@ -167,6 +169,8 @@ class Library(Base, BaseMixin):
                    .count() > 0
 
     def has_user_selected(self, user):
+        if user is None:
+            return False
         return LibraryQuery(DBSession) \
                    .query \
                    .join(Library.selected_users) \

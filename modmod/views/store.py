@@ -99,9 +99,11 @@ def serialize_libraries_with_purchased(libraries, user):
     result_libraries = []
 
     if libraries:
-        session = DBSession()
-        result = session.execute('SELECT library_id FROM user_purchased_library WHERE user_id = %d' % user.id)
-        purchased_library_ids = set([r[0] for r in result])
+        purchased_library_ids = set()
+        if user is not None:
+            session = DBSession()
+            result = session.execute('SELECT library_id FROM user_purchased_library WHERE user_id = %d' % user.id)
+            purchased_library_ids = set([r[0] for r in result])
 
         for l in libraries:
             result_libraries.append({
