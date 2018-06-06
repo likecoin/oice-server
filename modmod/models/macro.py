@@ -32,6 +32,7 @@ class Macro(Base, BaseMixin):
         return {
             'id': self.id,
             'name': self.tagname,
+            'isHidden': self.is_hidden,
         }
 
     @validates('name')
@@ -69,8 +70,7 @@ class MacroQuery:
         self.session = session
 
     def query(self):
-        return self.session.query(Macro) \
-                .filter(Macro.is_hidden == false())
+        return self.session.query(Macro)
 
     def get_by_id(self, macro_id):
         macro = self.session.query(Macro) \
