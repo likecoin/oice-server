@@ -400,14 +400,6 @@ def update_profile(request):
                 })
                 user.tutorial_state = newValue
 
-            if 'likeCoinId' in meta:
-                log_dict['change'].append({
-                    'whichFieldChange': 'likeCoinId',
-                    'beforeChange': user.like_coin_id,
-                    'afterChange': meta['likeCoinId'],
-                })
-                user.like_coin_id = meta['likeCoinId']
-
         if 'avatar' in request.POST:
             avatar_file = request.POST['avatar']
             factory = pyramid_safile.get_factory()
@@ -476,35 +468,13 @@ def connect_like_coin(request):
     if 'likeCoinId' in request.json_body:
         like_coin_id = str(request.json_body.get('likeCoinId', ''))
 
-        r = requests.get(get_likecoin_api_url() + '/users/id/' + like_coin_id)
+        r = requests.get(get_likecoin_api_url() + '/users/id/' + like_coin_id + '/min')
         if r.status_code != requests.codes.ok:
             raise ValidationError('ERR_LIKECOIN_CONNECT_INVALID_ID')
 
-    elif 'address' in request.json_body and 'signature' in request.json_body:
-        address = str(request.json_body.get('address', ''))
-        signature = request.json_body.get('signature')
-
-        # Signature verification
-        headers = {
-            'Content-type': 'application/json',
-            'Accept': 'text/plain',
-        }
-        verification_payload = {
-            'userId': user.id,
-            'address': address,
-            'signature': signature,
-        }
-        r = requests.post(get_cloud_function_api_base_url() + '/checkSignedLikeCoinAddress',
-                            data=json.dumps(verification_payload),
-                            headers=headers)
-        if r.status_code != requests.codes.ok:
-            raise ValidationError('ERR_LIKECOIN_ADDRESS_UNABLE_TO_VERIFY')
-
-        r = requests.get(get_likecoin_api_url() + '/users/addr/' + address)
-        if r.status_code != requests.codes.ok:
-            raise ValidationError('ERR_LIKECOIN_CONNECT_INVALID_ADDRESS')
-
-        like_coin_id = r.json().get('user')
+        wallet_address = request.json_body.get('address', '')
+        if wallet_address and wallet_address != r.json().get('wallet'):
+            raise ValidationError('ERR_LIKECOIN_CONNECT_INVALID_ID')
 
     else:
         raise ValidationError('ERR_LIKECOIN_CONNECT_MISSING_PARAMS')
