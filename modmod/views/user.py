@@ -474,7 +474,7 @@ def connect_like_coin(request):
 
         wallet_address = request.json_body.get('address', '')
         if wallet_address and wallet_address != r.json().get('wallet'):
-            raise ValidationError('ERR_LIKECOIN_CONNECT_INVALID_ID')
+            raise ValidationError('ERR_LIKECOIN_CONNECT_ID_WALLET_MISMATCH')
 
     else:
         raise ValidationError('ERR_LIKECOIN_CONNECT_MISSING_PARAMS')
