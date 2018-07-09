@@ -49,6 +49,10 @@ store_library_list_latest = Service(name='store_library_list_latest',
                                     path='store/library/list/latest',
                                     renderer='json')
 
+store_library_list_paid = Service(name='store_library_list_paid',
+                                    path='store/library/list/paid',
+                                    renderer='json')
+
 store_library_list_featured = Service(name='store_library_list_featured',
                                     path='store/library/list/featured',
                                     renderer='json')
@@ -188,6 +192,34 @@ def list_latest_library(request):
         libraries = LibraryQuery(DBSession).fetch_store_libs()\
                 .options(joinedload(Library.purchased_users))\
                 .order_by(Library.launched_at.desc())
+
+    reply['libraries'] = serialize_libraries_with_purchased(libraries, user)
+    return reply
+
+
+@store_library_list_paid.get()
+def list_paid_library(request):
+    user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
+    reply = {"message": "ok", "code": 200}
+    if 'offset' in request.GET and 'limit' in request.GET:
+      offset = request.GET['offset']
+      limit = request.GET['limit']
+      total_count = LibraryQuery(DBSession).count_paid_store_libs().scalar()
+
+      reply['totalPages'] = math.ceil(int(total_count)/int(limit))
+      libraries = LibraryQuery(DBSession).fetch_paid_store_libs()\
+                  .outerjoin(Library.purchased_users)\
+                  .options(contains_eager(Library.purchased_users))\
+                  .order_by(func.count(User.id).desc())\
+                  .group_by(Library.id)\
+                  .offset(offset).limit(limit)
+      reply['pageNumber'] = int(int(offset)/int(limit) + 1)
+    else:
+      libraries = LibraryQuery(DBSession).fetch_paid_store_libs()\
+                  .outerjoin(Library.purchased_users)\
+                  .options(contains_eager(Library.purchased_users))\
+                  .order_by(func.count(User.id).desc())\
+                  .group_by(Library.id)
 
     reply['libraries'] = serialize_libraries_with_purchased(libraries, user)
     return reply

@@ -260,3 +260,11 @@ class LibraryQuery:
     def count_free_store_libs(self):
         return self.count_store_libs()\
             .filter(Library.price == 0)
+
+    def count_paid_store_libs(self):
+        return self.count_store_libs() \
+            .filter(Library.price > 0)
+
+    def fetch_paid_store_libs(self):
+        return self.fetch_store_libs() \
+            .filter(Library.price > 0)
