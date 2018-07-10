@@ -221,13 +221,8 @@ def update_library(request):
                     raise ValidationError('ERR_LIBRARY_PRICE_TIER_SHOULD_NOT_BE_ATTACHED')
                 else:
                     library.price = PriceTierQuery(DBSession).get_price_usd_by_tier(meta['price'])
-            if 'launchedAt' in meta and 'isLaunched' in meta:
-                if not meta['isLaunched'] and meta['launchedAt']:
-                    library.launched_at = None
-                    library.is_public = False
-                elif meta['isLaunched'] and not meta['launchedAt']:
-                    library.launched_at = datetime.datetime.utcnow()
-                    library.is_public = True
+            if 'isLaunched' in meta:
+                library.is_public = meta['isLaunched']
 
         if 'coverStorage' in request.POST:
             cover_storage = request.POST['coverStorage']
