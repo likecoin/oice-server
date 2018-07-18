@@ -48,6 +48,10 @@ class Library(Base, BaseMixin):
     is_default = sa.Column(sa.Boolean, nullable=False, index=True, server_default=false())
     priority = sa.Column(sa.Integer, nullable=False, server_default='0')
     price = sa.Column(sa.Float, nullable=False, index=True, server_default='-1')
+    discount_price = sa.Column(sa.Float, nullable=False, server_default='0')
+    # Possible values of settlement_currency
+    # fiat / likecoin / None (which means free or private library)
+    settlement_currency = sa.Column(sa.Unicode(128), index=True, nullable=True, server_default="")
     launched_at = sa.Column(sa.DateTime, nullable=True)
     users = relationship(
         "User",
@@ -103,6 +107,8 @@ class Library(Base, BaseMixin):
             'cover': self.cover_storage_url,
             'coverStorage': self.cover_storage_url, # Deprecated
             'price': self.price,
+            'discountPrice': self.discount_price,
+            'settlementCurrency': self.settlement_currency,
             'license': self.license,
             'isPublic': self.is_public,
             'isNew': self.is_new,
