@@ -40,6 +40,9 @@ ios_iap_validator_url_v2 = None
 iap_sub_price = None
 iap_sub_price_payout_ratio = None
 likecoin_api_url = None
+likecoin_tx_subscription_key = None
+likecoin_max_reward_ratio = None
+oice_likecoin_wallet = None
 voucher_api_url = None
 voucher_api_key = None
 cloud_function_api_base_url = None
@@ -66,6 +69,9 @@ def includeme(config):
     global ios_iap_validator_url
     global ios_iap_validator_url_v2
     global likecoin_api_url
+    global likecoin_tx_subscription_key
+    global likecoin_max_reward_ratio
+    global oice_likecoin_wallet
     global voucher_api_url
     global voucher_api_key
     global cloud_function_api_base_url
@@ -89,6 +95,12 @@ def includeme(config):
         config.get_settings().get('iapvalidator.ios_url_v2', None)
     likecoin_api_url = \
         config.get_settings().get('likecoin_api.url', None)
+    likecoin_tx_subscription_key = \
+        config.get_settings().get('likecoin.tx_subscription_key', None)
+    likecoin_max_reward_ratio = \
+        config.get_settings().get('likecoin.max_reward', 0)
+    oice_likecoin_wallet = \
+        config.get_settings().get('oice.likecoin_wallet', None)
     voucher_api_url = \
         config.get_settings().get('voucher_api.url', None)
     voucher_api_key = \
@@ -180,6 +192,17 @@ def get_likecoin_api_url():
     else:
         return None
 
+def get_likecoin_tx_subscription_key():
+    global likecoin_tx_subscription_key
+    return likecoin_tx_subscription_key
+
+def get_likecoin_max_reward_ratio():
+    global likecoin_max_reward_ratio
+    return likecoin_max_reward_ratio
+
+def get_oice_likecoin_wallet():
+    global oice_likecoin_wallet
+    return oice_likecoin_wallet
 
 def get_voucher_api_url():
     global voucher_api_url
