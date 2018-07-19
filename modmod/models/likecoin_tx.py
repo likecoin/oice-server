@@ -34,6 +34,17 @@ class LikecoinTx(Base, BaseMixin):
         sa.UniqueConstraint('user_id', 'product_type', 'product_id', name='user_id_product_type_product_id'),
     )
 
+
+class LikecoinTxFactory(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    def __getitem__(self, key):
+        tx = LikecoinTxQuery(DBSession).get_by_id(key)
+        return tx
+
+
 class LikecoinTxQuery:
     def __init__(self, session=DBSession):
         self.session = session

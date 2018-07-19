@@ -121,5 +121,5 @@ from .user_subscription_payout import (
 )
 
 from .likecoin_tx import (
-    LikecoinTx, LikecoinTxQuery,
+    LikecoinTx, LikecoinTxFactory, LikecoinTxQuery,
 )

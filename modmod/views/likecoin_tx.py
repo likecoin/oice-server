@@ -1,5 +1,6 @@
 from cornice import Service
 import json
+import math
 import requests
 
 from modmod.exc import ValidationError
@@ -10,11 +11,12 @@ from ..models import (
     DBSession,
     LibraryQuery,
     LikecoinTx,
+    LikecoinTxFactory,
     LikecoinTxQuery,
     UserQuery,
 )
 from . import (
-    get_likecoin_api_url,
+    get_likecoin_firebase_api_url,
     get_likecoin_tx_subscription_key,
     get_likecoin_max_reward_ratio,
     get_oice_likecoin_wallet,
@@ -29,7 +31,9 @@ likecoin_tx_product_type = Service(name='likecoin_tx_product_type',
 
 likecoin_tx_id_validate = Service(name='likecoin_tx_id_validate',
                                     path='likecoin/tx/{id}/validate',
-                                    renderer='json')
+                                    renderer='json',
+                                    factory=LikecoinTxFactory,
+                                    traverse='/{id}',)
 
 likecoin_tx_subscription = Service(name='likecoin_tx_subscription',
                                     path='likecoin/tx/subscription',
@@ -39,9 +43,6 @@ likecoin_tx_subscription = Service(name='likecoin_tx_subscription',
 @likecoin_tx_product_type.post(permission='set')
 def add_product_tx(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
-
-    if user.like_coin_id is None:
-        raise ValidationError('ERR_LIKECOIN_ID_NOT_LINKED')
 
     try:
         product_type = request.matchdict['product_type']
@@ -70,8 +71,6 @@ def add_product_tx(request):
         raise ValidationError('ERR_LIKECOIN_TX_PRODUCT_PURCHASED')
 
     return {
-        'code': 200,
-        'message': 'ok',
         'id': tx.id,
         'userId': user.id,
         'productType': product_type,
@@ -87,25 +86,28 @@ def add_product_tx(request):
 
 
 def get_likecoin_tx_detail(tx_hash):
-    url = get_likecoin_api_url() + '/tx/hash/' + tx_hash
+    url = get_likecoin_firebase_api_url() + '/tx/hash/' + tx_hash
     r = requests.get(url)
     if r.status_code == requests.codes.ok:
-        return response.json()
-        # { completeTs, fromId, from, status, to, ts, txHash, type, value }
+        return r.json()
+        # { completeTs, from, status, to, ts, txHash, type, value }
     return None
 
+
+def is_tx_amount_valid(tx_amount, likecoin_value):
+    amount = float(likecoin_value) / math.pow(10, 18)
+    return math.isclose(tx_amount, amount)
 
 @likecoin_tx_id_validate.put(permission='get')
 def validate_likecoin_tx(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
     try:
-        tx_id = request.matchdict['id']
         tx_hash = request.json_body['txhash']
     except KeyError:
         raise ValidationError('ERR_LIKECOIN_TX_PRODUCT_INFO_MISSING')
 
-    tx = LikecoinTxQuery(DBSession).get_by_id(tx_id)
+    tx = request.context
 
     if tx.tx_hash != tx_hash:
         raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_TX_HASH_NOT_MATCH')
@@ -115,34 +117,29 @@ def validate_likecoin_tx(request):
         raise ValidationError('ERR_LIKECOIN_TX_HASH_NOT_EXIST')
     if tx.status == 'success':
         raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_EXISTED')
-
+    if is_tx_amount_valid(tx.amount, likecoin_tx['value']) is not True:
+        raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_AMOUNT_NOT_MATCH')
     if tx.from_ != likecoin_tx['from']:
         raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_FROM_ADDRESS_NOT_MATCH')
     if not (tx.to == likecoin_tx['to'] == get_oice_likecoin_wallet()):
         raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_TO_ADDRESS_NOT_MATCH')
-    if tx.amount != likecoin_tx['value']:
-        raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_AMOUNT_NOT_MATCH')
-    if tx.reward != likecoin_tx['reward']:
-        raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_REWARD_NOT_MATCH')
 
     product = None
 
     if tx.product_type == 'library':
         library = LibraryQuery(DBSession).get_library_by_id(tx.product_id)
-        product = library.serialize_min()
+        return {
+            'product': library.serialize_min(),
+        }
 
-    return {
-        'code': 200,
-        'message': 'ok',
-        'product': product,
-    }
+    return {}
 
 
 def is_subscribe_payload_valid(tx, likecoin_tx):
     oice_wallet = get_oice_likecoin_wallet()
     return (tx.to is not None and tx.to == oice_wallet) and \
-           likecoin_tx.to == oice_wallet and \
-           tx.amount == likecoin_tx.amount
+           likecoin_tx['to'] == oice_wallet and \
+           is_tx_amount_valid(tx.amount, likecoin_tx['value'])
 
 
 @likecoin_tx_subscription.post()

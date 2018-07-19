@@ -40,6 +40,7 @@ ios_iap_validator_url_v2 = None
 iap_sub_price = None
 iap_sub_price_payout_ratio = None
 likecoin_api_url = None
+likecoin_firebase_api_url = None
 likecoin_tx_subscription_key = None
 likecoin_max_reward_ratio = None
 oice_likecoin_wallet = None
@@ -69,6 +70,7 @@ def includeme(config):
     global ios_iap_validator_url
     global ios_iap_validator_url_v2
     global likecoin_api_url
+    global likecoin_firebase_api_url
     global likecoin_tx_subscription_key
     global likecoin_max_reward_ratio
     global oice_likecoin_wallet
@@ -95,6 +97,8 @@ def includeme(config):
         config.get_settings().get('iapvalidator.ios_url_v2', None)
     likecoin_api_url = \
         config.get_settings().get('likecoin_api.url', None)
+    likecoin_firebase_api_url = \
+        config.get_settings().get('likecoin_firebase_api.url', None)
     likecoin_tx_subscription_key = \
         config.get_settings().get('likecoin.tx_subscription_key', None)
     likecoin_max_reward_ratio = \
@@ -191,6 +195,10 @@ def get_likecoin_api_url():
         return likecoin_api_url
     else:
         return None
+
+def get_likecoin_firebase_api_url():
+    global likecoin_firebase_api_url
+    return likecoin_firebase_api_url
 
 def get_likecoin_tx_subscription_key():
     global likecoin_tx_subscription_key
