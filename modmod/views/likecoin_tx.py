@@ -115,8 +115,6 @@ def validate_likecoin_tx(request):
     likecoin_tx = get_likecoin_tx_detail(tx.tx_hash)
     if likecoin_tx is None:
         raise ValidationError('ERR_LIKECOIN_TX_HASH_NOT_EXIST')
-    if tx.status == 'success':
-        raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_EXISTED')
     if is_tx_amount_valid(tx.amount, likecoin_tx['value']) is not True:
         raise ValidationError('ERR_LIKECOIN_TX_VALIDATE_AMOUNT_NOT_MATCH')
     if tx.from_ != likecoin_tx['from']:
@@ -137,7 +135,7 @@ def validate_likecoin_tx(request):
 
 def is_subscribe_payload_valid(tx, likecoin_tx):
     oice_wallet = get_oice_likecoin_wallet()
-    return (tx.to is not None and tx.to == oice_wallet) and \
+    return (tx.to is None or tx.to == oice_wallet) and \
            likecoin_tx['to'] == oice_wallet and \
            is_tx_amount_valid(tx.amount, likecoin_tx['value'])
 
@@ -173,7 +171,7 @@ def subscribe_likecoin_tx(request):
         # invalid subscribe payload
         return ok
 
-    if tx.tx_hash is not None:
+    if tx.tx_hash is None:
         tx.tx_hash = request.json_body['txHash']
         tx.from_ = request.json_body['from']
         tx.to = request.json_body['to']
