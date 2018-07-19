@@ -36,11 +36,11 @@ likecoin_tx_id_validate = Service(name='likecoin_tx_id_validate',
                                     traverse='/{id}',)
 
 likecoin_tx_subscription = Service(name='likecoin_tx_subscription',
-                                    path='likecoin/tx/subscription',
+                                    path='likecoin/tx/subscription/{key}',
                                     renderer='json')
 
 
-@likecoin_tx_product_type.post(permission='set')
+@likecoin_tx_product_type.post(permission='get')
 def add_product_tx(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
@@ -147,7 +147,7 @@ def subscribe_likecoin_tx(request):
         'message': 'ok'
     }
 
-    if request.params.get('key') != get_likecoin_tx_subscription_key():
+    if request.matchdict['key'] != get_likecoin_tx_subscription_key():
         # invalid subscription key
         return ok
 
