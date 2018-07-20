@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy import Index
 from sqlalchemy.sql.expression import false
+from pyramid.security import Allow
 import logging
 
 from modmod.models.base import (
@@ -34,6 +35,12 @@ class LikecoinTx(Base, BaseMixin):
         sa.UniqueConstraint('user_id', 'product_type', 'product_id', name='user_id_product_type_product_id'),
     )
 
+    @property
+    def __acl__(self):
+        acl = super(LikecoinTx, self).__acl__()
+        acl = acl + [(Allow, self.user.email, 'get'),
+                     (Allow, self.user.email, 'set')]
+        return acl
 
 class LikecoinTxFactory(object):
 
