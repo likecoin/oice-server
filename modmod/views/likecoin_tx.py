@@ -40,7 +40,7 @@ likecoin_tx_subscription = Service(name='likecoin_tx_subscription',
                                     renderer='json')
 
 
-@likecoin_tx_product_type.post(permission='get')
+@likecoin_tx_product_type.post(permission='set')
 def add_product_tx(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
