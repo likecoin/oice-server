@@ -103,6 +103,9 @@ user_id_profile_details = Service(name='user_id_profile_details',
 user_status = Service(name='user_status',
                     path='user/status',
                     renderer='json')
+user_likecoin_id = Service(name='user_likecoin_id',
+                           path='user/likecoin/{likecoin_id}',
+                           renderer='json')
 
 @login.post()
 def login_user(request):
@@ -676,3 +679,15 @@ def check_user_status(request):
       "code": 200,
       "message": "ok",
     }
+
+
+@user_likecoin_id.get()
+def check_likecoin_connect_status(request):
+    likecoin_id = request.matchdict['likecoin_id']
+    user = UserQuery(DBSession).query.filter(User.like_coin_id == likecoin_id).one_or_none()
+
+    response = Response()
+    response.charset = 'UTF-8'
+    response.status_code = 200 if user else 404
+    response.text = 'OK' if user else 'NOT FOUND'
+    return response
