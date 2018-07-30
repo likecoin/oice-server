@@ -688,6 +688,6 @@ def check_likecoin_connect_status(request):
 
     response = Response()
     response.charset = 'UTF-8'
-    response.status_code = 200 if user else 404
+    response.status_code = 200
     response.text = 'OK' if user else 'NOT FOUND'
     return response
