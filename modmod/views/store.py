@@ -204,10 +204,10 @@ def list_paid_library(request):
     if 'offset' in request.GET and 'limit' in request.GET:
       offset = request.GET['offset']
       limit = request.GET['limit']
-      total_count = LibraryQuery(DBSession).count_paid_store_libs().scalar()
+      total_count = LibraryQuery(DBSession).count_likecoin_store_libs().scalar()
 
       reply['totalPages'] = math.ceil(int(total_count)/int(limit))
-      libraries = LibraryQuery(DBSession).fetch_paid_store_libs()\
+      libraries = LibraryQuery(DBSession).fetch_likecoin_store_libs()\
                   .outerjoin(Library.purchased_users)\
                   .options(contains_eager(Library.purchased_users))\
                   .order_by(func.count(User.id).desc())\
@@ -215,7 +215,7 @@ def list_paid_library(request):
                   .offset(offset).limit(limit)
       reply['pageNumber'] = int(int(offset)/int(limit) + 1)
     else:
-      libraries = LibraryQuery(DBSession).fetch_paid_store_libs()\
+      libraries = LibraryQuery(DBSession).fetch_likecoin_store_libs()\
                   .outerjoin(Library.purchased_users)\
                   .options(contains_eager(Library.purchased_users))\
                   .order_by(func.count(User.id).desc())\
