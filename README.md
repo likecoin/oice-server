@@ -1,5 +1,6 @@
 Oice-server(modmod) README
 ==================
+[![CircleCI](https://circleci.com/gh/likecoin/oice-server.svg?style=svg)](https://circleci.com/gh/likecoin/oice-server)
 
 - [Basic version](#basic-version)
 - [Python Server](#python-server)
