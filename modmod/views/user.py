@@ -548,8 +548,6 @@ def get_user_id_profile_details(request):
     number_of_oices = 0
     # number of assets from user's public library
     number_of_assets = 0
-    # number of oices using any of assets from the user
-    number_of_credits = 0
 
     # user stories (not deleted, and has at least some oices published)
     stories = []
@@ -589,6 +587,7 @@ def get_user_id_profile_details(request):
     # handle asset credits (BUT NOT the owner of library)
     for asset in user.assets:
         if not asset.is_deleted:
+            number_of_assets += 1
             library = asset.library
             # if library is not in user's libraries
             if not library.id in user_libraries_ids and library.is_public and not library.is_deleted:
