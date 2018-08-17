@@ -548,8 +548,6 @@ def get_user_id_profile_details(request):
     number_of_oices = 0
     # number of assets from user's public library
     number_of_assets = 0
-    # number of oices using any of assets from the user
-    number_of_credits = 0
 
     # user stories (not deleted, and has at least some oices published)
     stories = []
@@ -581,7 +579,7 @@ def get_user_id_profile_details(request):
     user_libraries_ids = set()
     # handle creators of library (which may not be credited in any assets in the library at all)
     for library in user.libraries:
-        if library.is_public and not library.is_deleted:
+        if library.is_public and not library.is_deleted and len(library.asset) > 0:
             user_libraries.add(library)
             libraries_asset_ids[library.id] = [asset.id for asset in library.asset]
             user_libraries_ids.add(library.id)
@@ -589,46 +587,17 @@ def get_user_id_profile_details(request):
     # handle asset credits (BUT NOT the owner of library)
     for asset in user.assets:
         if not asset.is_deleted:
+            number_of_assets += 1
             library = asset.library
             # if library is not in user's libraries
             if not library.id in user_libraries_ids and library.is_public and not library.is_deleted:
                 libraries_asset_ids[library.id].append(asset.id)
                 credited_libraries.add(library)
 
-    # unique oice ids that use library assets from this user
-    oice_ids_use_library = set()
-
-    # stores {'oice_id1': 12, 'oice_id2': 34, ...}, which counts number of assets from user's libaries the oice uses
-    oice_count_dictionary = defaultdict(int)
-    # stores {'library_id1': 56, 'library_id2': 78, ...}, which counts number of oices that use a particular library
-    libraries_use_count = defaultdict(int)
-
-    for library_id, asset_ids in libraries_asset_ids.items():
-        number_of_assets += len(asset_ids)
-        block_ids = DBSession.query(Attribute.block_id) \
-                     .filter(Attribute.asset_id.in_(asset_ids)) \
-                     .distinct()
-        block_ids = [b.block_id for b in block_ids]
-
-        # Find oice_ids that used assets from this library
-        if block_ids:
-            oice_ids = DBSession.query(Block.oice_id, func.count(Block.oice_id).label('used_asset_block_count')) \
-                        .filter(Block.id.in_(block_ids)) \
-                        .filter(Block.oice_id == Oice.id) \
-                        .filter(Oice.sharing_option == 0) \
-                        .filter(Oice.is_deleted == false()) \
-                        .group_by(Block.oice_id)
-            for o in oice_ids:
-                oice_count_dictionary[o.oice_id] += o.used_asset_block_count
-
-            oice_ids = [o.oice_id for o in oice_ids]
-            oice_ids_use_library.update(oice_ids)
-            libraries_use_count[library_id] = len(oice_ids)
-
     # sort library for each group of library, then combine
     # 1. sort user's libraries by priority if is set, then by number of public oices used
     if user_libraries:
-        user_libraries = sorted(user_libraries, key=lambda library: libraries_use_count[library.id], reverse=True)
+        user_libraries = sorted(user_libraries, key=lambda library: len(library.purchased_users), reverse=True)
         is_sorted_by_priority = any(library.priority > 0 for library in user_libraries)
         if is_sorted_by_priority:
             user_libraries = sorted(user_libraries, key=attrgetter("priority"))
@@ -638,26 +607,6 @@ def get_user_id_profile_details(request):
         credited_libraries = sorted(credited_libraries, key=lambda library: len(libraries_asset_ids[library.id]), reverse=True)
     libraries = [library.serialize_profile() for library in user_libraries] + [library.serialize_profile() for library in credited_libraries]
 
-    number_of_credits = len(oice_ids_use_library)
-
-    # find out top stories using the users' asset
-    oices = OiceQuery(DBSession) \
-        .get_by_ids(oice_ids_use_library)
-
-    story_count_dictionary = defaultdict(int)
-    story_ids = set()
-    for oice in oices:
-        story_count_dictionary[oice.story_id] += oice_count_dictionary[oice.id]
-        story_ids.add(oice.story_id)
-
-    credit_stories = StoryQuery(DBSession) \
-                .get_story_by_id_list(story_ids)
-
-    # exclude story written by the user
-    credit_stories = [story for story in credit_stories if story.users[0].id != user.id]
-    credit_stories.sort(key=lambda story: story_count_dictionary[story.id], reverse=True)
-    credits = [story.serialize_profile() for story in credit_stories]
-
     return {
       "code": 200,
       "message": "ok",
@@ -665,11 +614,9 @@ def get_user_id_profile_details(request):
         "stats": {
           "oices": number_of_oices,
           "assets": number_of_assets,
-          "credits": number_of_credits,
         },
         "stories": stories,
         "libraries": libraries,
-        "credits": credits,
       },
     }
 
