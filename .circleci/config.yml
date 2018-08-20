@@ -35,7 +35,7 @@ jobs:
       - run:
           name: Dependencies
           command: |
-            apk --no-cache --virtual .build-deps add gcc musl-dev
+            apk --no-cache --virtual .build-deps add gcc g++ musl-dev
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt

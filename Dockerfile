@@ -27,6 +27,7 @@ COPY ./requirements.txt /app/
 WORKDIR /app
 RUN apk --no-cache --virtual .build-deps add \
   gcc \
+  g++ \
   musl-dev \
   && pip install -r requirements.txt \
   && apk del .build-deps
