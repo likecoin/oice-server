@@ -26,9 +26,13 @@ from .slack import (
 
 from .confluent_kafka_log import (
     init_producer,
-    log_message,
+    log_message as kafka_log_message,
 )
 
+from .gcloudPub import (
+    init_gcloud_pub,
+    log_message as gcloud_pub_log_message,
+)
 
 def includeme(config):
     isProduction = config.get_settings().get('isProduction', '') == 'true'
@@ -51,3 +55,11 @@ def includeme(config):
         kafka_port = \
             config.get_settings().get('kafka.port', '')
         init_producer(','.join([kafka_host + ':' + p for p in kafka_port.split(',')]), isProduction)
+
+    if config.get_settings().get('gcloud.pub.enable', None) == 'true':
+        projectId = config.get_settings().get('gcloud.pub.projectId', '')
+        init_gcloud_pub(projectId, isProduction)
+
+def log_message(topic, dict_msg):
+    gcloud_pub_log_message(topic, dict_msg)
+    kafka_log_message(topic, dict_msg)
