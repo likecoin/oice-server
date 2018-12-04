@@ -63,7 +63,7 @@ def get_move_path_string(x, y):
 
 
 class ScriptExporter(object):
-    def __init__(self, resize_script, oice, export_path,
+    def __init__(self, resize_script, oice, export_path=None,
                  oice_view_url=None, oice_communication_url=None,
                  og_image_button_url=None, og_image_origin_url=None,
                  characters=[],

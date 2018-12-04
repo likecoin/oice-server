@@ -1,10 +1,13 @@
 import json
 import datetime
 import os.path
+import transaction
+import time
 import uuid
 import pyramid_safile
 import logging
 from pyramid.httpexceptions import HTTPForbidden
+from pyramid.response import FileResponse
 from cornice import Service
 from modmod.exc import ValidationError
 from sqlalchemy import func, and_, or_
@@ -22,6 +25,8 @@ from ..models import (
     StoryFactory,
     StoryTag,
     StoryTagQuery,
+    ProjectExport,
+    ProjectExportFactory,
     UserQuery,
     UserReadOiceProgress,
     UserReadOiceProgressQuery,
@@ -44,7 +49,7 @@ from ..config import (
 from ..operations.script_validator import ScriptValidator
 from ..operations.credit import get_story_credit
 from ..operations.image_handler import ComposeOgImage
-from ..operations.worker import KSBuildWorker
+from ..operations.worker import ExportWorker, KSBuildWorker
 from ..operations.block import count_words_of_block
 from ..operations.story import (
     remove_story_localization,
@@ -96,6 +101,16 @@ story_build = Service(name='story_build',
                       renderer='json',
                       factory=StoryFactory,
                       traverse='/{story_id}')
+story_id_export = Service(name='story_id_export',
+                          path='story/{story_id}/export',
+                          renderer='json',
+                          factory=StoryFactory,
+                          traverse='/{story_id}')
+story_export_id = Service(name='story_export_id',
+                          path='story/export/{project_export_id}',
+                          renderer='json',
+                          factory=ProjectExportFactory,
+                          traverse='/{project_export_id}')
 story_like = Service(name='story_like',
                      path='story/{story_id}/like',
                      renderer='json',
@@ -414,6 +429,44 @@ def build_story(request):
         'batchId': batchId,
         'jobCount': len(oices)
     }
+
+
+@story_id_export.get(permission='admin_get')
+def export_story(request):
+    story = request.context
+
+    project_export = ProjectExport(story=story)
+    DBSession.add(project_export)
+    DBSession.flush()
+
+    project_export_id = project_export.id
+
+    # explicitly commit the transaction,
+    # because we want to make sure the worker can find it from DB
+    transaction.commit()
+
+    worker = ExportWorker(project_export_id)
+    worker.run()
+
+    return {
+        'message': 'ok',
+        'id': project_export_id
+    }
+
+
+@story_export_id.get(permission='admin_get')
+def export_story(request):
+    project_export = request.context
+
+    response = FileResponse(project_export.exported_files.dst,
+                            request=request,
+                            content_type='application/zip')
+
+    formatted_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d_%H%M%S')
+    file_name = 'story_' + str(project_export.story.id) + '_' + formatted_timestamp + '.zip'
+    response.headers['Content-Disposition'] = 'attachment; filename="%s"' % file_name
+
+    return response
 
 
 @story_like.post()
