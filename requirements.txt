@@ -23,6 +23,7 @@ zope.interface==4.4.0
 zope.sqlalchemy==0.7.7
 -e git://github.com/rickmak/pyramid_safile.git#egg=pyramid_safile
 ply==3.6
+redis==2.10.6
 rq==0.7.1
 cornice==2.4.0
 requests==2.14.2
