@@ -25,8 +25,8 @@ zope.sqlalchemy==0.7.7
 ply==3.6
 rq==0.7.1
 cornice==2.4.0
-requests==2.14.2
-stripe==1.55.2
+requests==2.20.1
+stripe==2.15.0
 google-cloud-storage==1.1.1
 confluent-kafka==0.9.4
 setuptools==35.0.2
