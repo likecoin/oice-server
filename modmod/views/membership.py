@@ -119,7 +119,7 @@ def post_new_subscription(request):
             customer.source = token['id']
             customer.save()
 
-        subscription_list = stripe.Subscription.all(
+        subscription_list = stripe.Subscription.list(
                               customer=user.customer_id,
                               plan=get_stripe_plan_id(),
                               status='active'
@@ -179,7 +179,7 @@ def cancel_subscription(request):
     try:
         user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
-        subscription_list = stripe.Subscription.all(
+        subscription_list = stripe.Subscription.list(
                               customer=user.customer_id,
                               plan=get_stripe_plan_id(),
                               status='active'
@@ -187,7 +187,8 @@ def cancel_subscription(request):
 
         if subscription_list and subscription_list.data:
             current_subscription = subscription_list.data[0]
-            current_subscription.delete(at_period_end=True)
+            current_subscription.cancel_at_period_end = True
+            current_subscription.save()
             user.is_cancelled = True
 
             log_dict = {
