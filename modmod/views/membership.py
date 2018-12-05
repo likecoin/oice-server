@@ -130,6 +130,7 @@ def post_new_subscription(request):
         if subscription_list and subscription_list.data:
             current_subscription = subscription_list.data[0]
             current_subscription.plan = get_stripe_plan_id()
+            current_subscription.cancel_at_period_end = False
             current_subscription.save()
             new_expire_date = datetime.fromtimestamp(current_subscription.current_period_end)
             if user.expire_date is None or new_expire_date > user.expire_date:
