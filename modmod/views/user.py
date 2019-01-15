@@ -295,7 +295,7 @@ def login_user(request):
 
     serialize_user['intercomUserHash'] = hmac.new(
         bytes(get_intercom_secret_key().encode('utf-8')),
-        bytes(str(user.id).encode('utf-8')),
+        bytes(str(user.email).encode('utf-8')),
         digestmod=hashlib.sha256
     ).hexdigest()
 
