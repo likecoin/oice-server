@@ -1,4 +1,4 @@
-FROM python:3-alpine
+FROM python:3.5-alpine
 RUN mkdir /app
 RUN apk --no-cache add \
   ffmpeg \
