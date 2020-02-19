@@ -33,3 +33,4 @@ setuptools==35.0.2
 firebase-admin==1.0.0
 google-cloud-translate==0.24.0
 Babel==2.5.0
+redis==2.10.6
