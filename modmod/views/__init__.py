@@ -31,6 +31,7 @@ KAFKA_TOPIC_BLOCK = 'oice-block'
 KAFKA_TOPIC_ERROR = 'oice-error'
 
 intercom_secret_key = None
+crisp_secret_key = None
 stripe_api_key = None
 stripe_client_id = None
 stripe_plan_id = None
@@ -63,6 +64,7 @@ def dict_get_value(_dict, keys_array, default_value=None):
 
 def includeme(config):
     global intercom_secret_key
+    global crisp_secret_key
     global stripe_api_key
     global stripe_client_id
     global stripe_plan_id
@@ -83,6 +85,8 @@ def includeme(config):
 
     intercom_secret_key = \
         config.get_settings().get('intercom.secret_key', None)
+    crisp_secret_key = \
+        config.get_settings().get('crisp.secret_key', None)
     stripe_api_key = \
         config.get_settings().get('stripe.api_key', None)
     stripe_client_id = \
@@ -125,6 +129,12 @@ def get_intercom_secret_key():
     else:
         return None
 
+def get_crisp_secret_key():
+    global crisp_secret_key
+    if crisp_secret_key is not None:
+        return crisp_secret_key
+    else:
+        return None
 
 def get_stripe_api_key():
     global stripe_api_key
