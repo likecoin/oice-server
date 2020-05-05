@@ -19,6 +19,7 @@ jobs:
                 bash \
                 gcc \
                 g++ \
+                linux-headers \
                 make \
                 openssl\
                 && mkdir /rdkafka \
@@ -35,7 +36,7 @@ jobs:
       - run:
           name: Dependencies
           command: |
-            apk --no-cache --virtual .build-deps add gcc g++ musl-dev
+            apk --no-cache --virtual .build-deps add gcc g++ musl-dev linux-headers
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt

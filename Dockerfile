@@ -10,6 +10,7 @@ RUN apk --no-cache --virtual .build-deps add \
   bash \
   gcc \
   g++ \
+  linux-headers \
   make \
   openssl\
   && mkdir /rdkafka \
@@ -28,6 +29,7 @@ WORKDIR /app
 RUN apk --no-cache --virtual .build-deps add \
   gcc \
   g++ \
+  linux-headers \
   musl-dev \
   && pip install -r requirements.txt \
   && apk del .build-deps
