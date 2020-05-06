@@ -31,6 +31,7 @@ RUN apk --no-cache --virtual .build-deps add \
   g++ \
   linux-headers \
   musl-dev \
+  && pip install setuptools==45 \
   && pip install -r requirements.txt \
   && apk del .build-deps
 COPY ["CHANGES.txt", \

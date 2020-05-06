@@ -40,6 +40,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
+            pip install setuptools==45
             python setup.py develop
       - save_cache:
           key: oice-server-{{ checksum "requirements.txt" }}
