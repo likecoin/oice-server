@@ -7,7 +7,7 @@ SQLAlchemy==1.1.9
 sqlalchemy-utils==0.32.14
 WebOb==1.7.1
 alembic==0.9.1
-passlib==1.7.1
+passlib==1.7.3
 PyExecJS==1.4.0
 pylama==6.3.1
 pyramid==1.8.3
