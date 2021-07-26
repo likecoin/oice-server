@@ -35,3 +35,4 @@ firebase-admin==1.0.0
 google-cloud-translate==0.24.0
 Babel==2.5.0
 google-cloud-pubsub==0.37.1
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
