@@ -601,7 +601,7 @@ def get_user_id_profile_details(request):
             number_of_assets += 1
             library = asset.library
             # if library is not in user's libraries
-            if not library.id in user_libraries_ids and library.is_public and not library.is_deleted:
+            if library and not library.id in user_libraries_ids and library.is_public and not library.is_deleted:
                 libraries_asset_ids[library.id].append(asset.id)
                 credited_libraries.add(library)
 
