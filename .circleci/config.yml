@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/oice-server
     docker:
-      - image: python:3.6-alpine
+      - image: python:3.7-alpine
     environment:
       - CI: "true"
       - TERM: dumb
