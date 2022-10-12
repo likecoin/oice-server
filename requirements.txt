@@ -3,7 +3,7 @@ MarkupSafe==0.23
 PasteDeploy==1.5.2
 PyMySQL==0.7.11
 Pygments==2.2.0
-SQLAlchemy==1.1.9
+SQLAlchemy==1.2.18
 sqlalchemy-utils==0.32.14
 WebOb==1.7.1
 alembic==0.9.1
