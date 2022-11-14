@@ -3,7 +3,7 @@ MarkupSafe==0.23
 PasteDeploy==1.5.2
 PyMySQL==0.7.11
 Pygments==2.2.0
-SQLAlchemy==1.1.9
+SQLAlchemy==1.2.18
 sqlalchemy-utils==0.32.14
 WebOb==1.7.1
 alembic==0.9.1
@@ -30,7 +30,7 @@ requests==2.20.1
 stripe==2.15.0
 google-cloud-storage==1.1.1
 confluent-kafka==0.9.4
-setuptools==45
+setuptools==65.5.1
 firebase-admin==1.0.0
 google-cloud-translate==0.24.0
 Babel==2.5.0
