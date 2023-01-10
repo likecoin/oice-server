@@ -14,7 +14,7 @@
     "body-parser": "^1.12.4",
     "express": "^4.12.4",
     "request": "^2.79.0",
-    "socket.io": "^1.7.2"
+    "socket.io": "^2.1.0"
   },
   "preferGlobal": true,
   "private": true,
