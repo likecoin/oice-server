@@ -1,7 +1,6 @@
-FROM node:8-alpine
-ADD package.json /tmp/package.json
-RUN cd /tmp && yarn install
-RUN mv /tmp/node_modules /node_modules
-WORKDIR /
-ADD . /
+FROM node:14
+WORKDIR /app
+COPY package.json package-lock.json /app/
+RUN npm install
+ADD . /app
 CMD node server.js
