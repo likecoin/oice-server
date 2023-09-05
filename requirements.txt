@@ -23,6 +23,7 @@ zope.interface==4.7.2
 zope.sqlalchemy==0.7.7
 -e git+https://github.com/likecoin/pyramid_safile.git#egg=pyramid_safile
 ply==3.6
+click==7.1.2
 redis==2.10.6
 rq==0.12.0
 cornice==2.4.0
