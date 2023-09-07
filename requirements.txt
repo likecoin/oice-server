@@ -1,10 +1,10 @@
 Mako==1.0.6
 MarkupSafe==0.23
 PasteDeploy==1.5.2
-PyMySQL==0.7.11
+PyMySQL==0.9.3
 Pygments==2.2.0
-SQLAlchemy==1.1.9
-sqlalchemy-utils==0.32.14
+SQLAlchemy==1.1.18
+sqlalchemy-utils==0.32.21
 WebOb==1.7.1
 alembic==0.9.1
 passlib==1.7.1
@@ -20,7 +20,7 @@ venusian==1.0
 waitress==1.0.2
 zope.deprecation==4.2.0
 zope.interface==4.7.2
-zope.sqlalchemy==0.7.7
+zope.sqlalchemy==1.1
 -e git+https://github.com/likecoin/pyramid_safile.git#egg=pyramid_safile
 ply==3.6
 click==7.1.2

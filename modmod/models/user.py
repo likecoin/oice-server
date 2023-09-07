@@ -1,6 +1,5 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy_utils import PasswordType
 from sqlalchemy.sql.expression import true, false
 from sqlalchemy.dialects import mysql
 from sqlalchemy.sql import text
