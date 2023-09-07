@@ -1,10 +1,3 @@
-from .mailchimp import (
-    init_mailchimp,
-    subscribe_mailchimp,
-    update_mailchimp_field,
-    update_user_mailchimp_stage,
-)
-
 from .elastic_search import (
     do_elastic_search_user,
     init_elastic_search,
@@ -36,8 +29,6 @@ from .gcloudPub import (
 
 def includeme(config):
     isProduction = config.get_settings().get('isProduction', '') == 'true'
-
-    init_mailchimp(config.get_settings())
 
     if config.get_settings().get('es.enable', None) == 'true':
         host = config.get_settings().get('es.host', '')

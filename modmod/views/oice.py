@@ -61,7 +61,6 @@ from ..operations.story import fork_story as do_fork_story
 from ..operations.oice import fork_oice as do_fork_oice, translate_oice
 from ..operations.block import count_words_of_block
 from .util import (
-    update_user_mailchimp_stage,
     log_message,
     normalize_language,
 )
@@ -226,7 +225,6 @@ def list_oice(request):
 @story_id_oice.post(permission='set')
 def add_oice(request):
     email = authenticated_userid(request)
-    update_user_mailchimp_stage(email=email, stage=2)
     user = UserQuery(DBSession).fetch_user_by_email(email=email).one()
 
     story_id = request.matchdict['story_id']

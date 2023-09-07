@@ -32,7 +32,6 @@ from .block import ensure_block_default_value, update_block_attributes
 from .script_exporter import ScriptExporter, KSScriptBuilder
 from .script_import_parser import parse_script, ScriptImportParserError
 from ..views.util import (
-    update_user_mailchimp_stage,
     init_slack,
     send_oice_publish_message_into_slack
 )
@@ -211,9 +210,6 @@ def run_build(_settings,
                 output_path, _settings["o2.output_dir"] % {'ks_uuid': oice.uuid})
             shutil.rmtree(temp_folder)
         except Exception:
-            if email:
-                update_user_mailchimp_stage(email=email, stage=3)
-
             log.exception('')
 
             payload["message"] = str(sys.exc_info()[1])
@@ -228,8 +224,6 @@ def run_build(_settings,
                         oice,
                         ks_view_url,
                         og_image_origin_url)
-            if email:
-                update_user_mailchimp_stage(email=email, stage=4)
 
             payload["message"] = "ok"
             send_result_request('build', payload)

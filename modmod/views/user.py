@@ -42,9 +42,6 @@ from ..operations.library import create_user_public_library
 from ..operations.credit import get_user_story_credit
 from ..operations.user import handle_anonymous_user_app_story_progress
 from .util import (
-    subscribe_mailchimp,
-    update_mailchimp_field,
-    update_user_mailchimp_stage,
     do_elastic_search_user,
     update_elastic_search_user,
     log_message,
@@ -193,7 +190,6 @@ def login_user(request):
         if user.is_trial:
             if user.is_paid() and user.expire_date < datetime.datetime.utcnow():
                 user.role = 'user'
-                update_user_mailchimp_stage(user=user, stage=5)
             if user.is_free():
                 user.is_trial = False
                 is_trial_ended = True
@@ -272,7 +268,6 @@ def login_user(request):
         # UserOperations.start_trial(user)
 
         user.last_login_at = datetime.datetime.utcnow()
-        subscribe_mailchimp(google_token, user, language=language)
 
         # update elastic search when create user
         update_elastic_search_user(user.display_name, email)
@@ -427,8 +422,6 @@ def update_profile(request):
                     'afterChange': json.dumps(handle.descriptor) if handle else None,
                 })
             user.import_handle(handle)
-
-        update_mailchimp_field(user=user)
 
         log_dict = set_basic_info_user_log(user, log_dict)
         log_dict = set_basic_info_log(request, log_dict)

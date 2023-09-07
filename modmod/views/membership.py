@@ -18,7 +18,6 @@ from ..models import (
 )
 
 from .util import (
-    update_user_mailchimp_stage,
     log_message,
 )
 
@@ -545,7 +544,6 @@ def check_user_trial_expire(request):
     for user in expire_users:
         user.role = 'user'
         if user.is_trial:
-            update_user_mailchimp_stage(user=user, stage=5)
             log_dict = {
                 'action': 'trialExpired',
             }
