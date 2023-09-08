@@ -22,10 +22,6 @@ from .models.base import (
     Base,
 )
 
-from .views.util.confluent_kafka_log import (
-    flush_producer,
-)
-
 from .operations.worker import init_worker
 log = logging.getLogger(__name__)
 
@@ -50,7 +46,6 @@ def groupfinder(userid, request):
         return ['r:' + user.role]
 
 def sigint_handler(signal, frame):
-    flush_producer()
     sys.exit(0)
 
 def main(global_config, **settings):

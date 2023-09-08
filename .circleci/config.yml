@@ -13,27 +13,6 @@ jobs:
       - restore_cache:
           key: oice-server-{{ checksum "requirements.txt" }}
       - run:
-          name: Kafka-Depencies
-          command: |
-              apk --no-cache --virtual .build-deps add \
-                bash \
-                gcc \
-                g++ \
-                linux-headers \
-                make \
-                openssl\
-                && mkdir /rdkafka \
-                && cd /rdkafka \
-                && wget https://github.com/edenhill/librdkafka/archive/v0.9.2.tar.gz \
-                && tar xvzf v0.9.2.tar.gz \
-                && cd librdkafka-0.9.2 \
-                && ./configure --prefix=/usr \
-                && make -j4 \
-                && make install \
-                && ldconfig /usr/local/lib \
-                && apk del .build-deps \
-                && rm -rf /rdkafka
-      - run:
           name: Dependencies
           command: |
             apk --no-cache --virtual .build-deps add gcc g++ musl-dev linux-headers
