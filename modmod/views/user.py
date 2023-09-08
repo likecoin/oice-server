@@ -51,7 +51,6 @@ from .util import (
 from . import (
     get_likecoin_api_url,
     get_cloud_function_api_base_url,
-    get_intercom_secret_key,
     get_crisp_secret_key,
     get_is_production,
     set_basic_info_user_log,
@@ -288,14 +287,6 @@ def login_user(request):
     serialize_user = user.serialize()
     serialize_user['isFirstLogin'] = is_first_login
     serialize_user['isTrialEnded'] = is_trial_ended
-
-    intercom_key = get_intercom_secret_key()
-    if intercom_key:
-        serialize_user['intercomUserHash'] = hmac.new(
-            bytes(intercom_key.encode('utf-8')),
-            bytes(str(user.email).encode('utf-8')),
-            digestmod=hashlib.sha256
-        ).hexdigest()
 
     crisp_key = get_crisp_secret_key()
     if crisp_key:

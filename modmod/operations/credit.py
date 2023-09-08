@@ -38,7 +38,7 @@ def get_oice_credit(oice):
 
     # Get list of assets used
     assets = AssetQuery(DBSession). \
-        get_by_ids(asset_ids)
+        get_by_ids(asset_ids) if len(asset_ids) else  []
 
     # Assign credit users by asset types
     for asset in assets:

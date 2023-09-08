@@ -30,7 +30,6 @@ log = logging.getLogger(__name__)
 KAFKA_TOPIC_BLOCK = 'oice-block'
 KAFKA_TOPIC_ERROR = 'oice-error'
 
-intercom_secret_key = None
 crisp_secret_key = None
 stripe_api_key = None
 stripe_client_id = None
@@ -63,7 +62,6 @@ def dict_get_value(_dict, keys_array, default_value=None):
 
 
 def includeme(config):
-    global intercom_secret_key
     global crisp_secret_key
     global stripe_api_key
     global stripe_client_id
@@ -83,8 +81,6 @@ def includeme(config):
     global es_log_key
     global is_production
 
-    intercom_secret_key = \
-        config.get_settings().get('intercom.secret_key', None)
     crisp_secret_key = \
         config.get_settings().get('crisp.secret_key', None)
     stripe_api_key = \
@@ -120,14 +116,6 @@ def includeme(config):
     es_log_whitelist = [path for path in es_log_whitelist_str.split(',')]
     es_log_key = config.get_settings().get('eslog.key', '')
     is_production = config.get_settings().get('isProduction', '') == 'true'
-
-
-def get_intercom_secret_key():
-    global intercom_secret_key
-    if intercom_secret_key is not None:
-        return intercom_secret_key
-    else:
-        return None
 
 def get_crisp_secret_key():
     global crisp_secret_key
