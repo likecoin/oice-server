@@ -17,11 +17,6 @@ from .slack import (
     send_oice_publish_message_into_slack,
 )
 
-from .confluent_kafka_log import (
-    init_producer,
-    log_message as kafka_log_message,
-)
-
 from .gcloudPub import (
     init_gcloud_pub,
     log_message as gcloud_pub_log_message,
@@ -40,17 +35,9 @@ def includeme(config):
 
     init_slack(config.get_settings())
 
-    if config.get_settings().get('kafka.enable', None) == 'true':
-        kafka_host = \
-            config.get_settings().get('kafka.host', '')
-        kafka_port = \
-            config.get_settings().get('kafka.port', '')
-        init_producer(','.join([kafka_host + ':' + p for p in kafka_port.split(',')]), isProduction)
-
     if config.get_settings().get('gcloud.pub.enable', None) == 'true':
         projectId = config.get_settings().get('gcloud.pub.projectId', '')
         init_gcloud_pub(projectId, isProduction)
 
 def log_message(topic, dict_msg):
     gcloud_pub_log_message(topic, dict_msg)
-    kafka_log_message(topic, dict_msg)

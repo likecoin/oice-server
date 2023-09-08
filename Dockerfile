@@ -6,24 +6,6 @@ RUN apk --no-cache add \
   imagemagick \
   unzip \
   zip
-RUN apk --no-cache --virtual .build-deps add \
-  bash \
-  gcc \
-  g++ \
-  linux-headers \
-  make \
-  openssl\
-  && mkdir /rdkafka \
-  && cd /rdkafka \
-  && wget https://github.com/edenhill/librdkafka/archive/v0.9.2.tar.gz \
-  && tar xvzf v0.9.2.tar.gz \
-  && cd librdkafka-0.9.2 \
-  && ./configure --prefix=/usr \
-  && make -j4 \
-  && make install \
-  && ldconfig /usr/local/lib \
-  && apk del .build-deps \
-  && rm -rf /rdkafka
 COPY ./requirements.txt /app/
 WORKDIR /app
 RUN apk --no-cache --virtual .build-deps add \
