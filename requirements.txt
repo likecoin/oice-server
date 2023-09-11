@@ -8,7 +8,7 @@ sqlalchemy-utils==0.32.21
 WebOb==1.7.1
 alembic==0.9.1
 passlib==1.7.1
-PyExecJS==1.4.0
+PyExecJS==1.5.1
 pylama==6.3.1
 pyramid==1.8.3
 pyramid-mako==1.0.2
@@ -29,9 +29,9 @@ rq==0.12.0
 cornice==2.4.0
 requests==2.20.1
 stripe==2.15.0
-google-cloud-storage==1.1.1
+google-cloud-storage==1.44.0
 setuptools==45
-firebase-admin==1.0.0
-google-cloud-translate==0.24.0
+firebase-admin==3.2.1
+google-cloud-translate==1.7.0
 Babel==2.5.0
-google-cloud-pubsub==0.37.1
+google-cloud-pubsub==1.7.0

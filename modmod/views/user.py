@@ -21,7 +21,6 @@ import pyramid_safile
 from io import BytesIO
 from modmod.exc import ValidationError
 from firebase_admin import auth
-from oauth2client.crypt import AppIdentityError
 from . import dict_get_value
 
 from ..models import (
@@ -121,8 +120,6 @@ def login_user(request):
             auth.verify_id_token(firebase_token)
         except ValueError:
             raise ValidationError('ERR_FIREBASE_AUTH_ERROR')
-        except AppIdentityError:
-            raise ValidationError('ERR_INVALID_FIREBASE_TOKEN')
 
     old_auth_id = authenticated_userid(request)
 
