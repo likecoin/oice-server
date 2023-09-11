@@ -34,11 +34,6 @@ crisp_secret_key = None
 stripe_api_key = None
 stripe_client_id = None
 stripe_plan_id = None
-android_iap_validator_url = None
-ios_iap_validator_url = None
-ios_iap_validator_url_v2 = None
-iap_sub_price = None
-iap_sub_price_payout_ratio = None
 voucher_api_url = None
 voucher_api_key = None
 cloud_function_api_base_url = None
@@ -61,9 +56,6 @@ def includeme(config):
     global stripe_api_key
     global stripe_client_id
     global stripe_plan_id
-    global android_iap_validator_url
-    global ios_iap_validator_url
-    global ios_iap_validator_url_v2
     global voucher_api_url
     global voucher_api_key
     global cloud_function_api_base_url
@@ -79,12 +71,6 @@ def includeme(config):
         config.get_settings().get('stripe.client_id', None)
     stripe_plan_id = \
         config.get_settings().get('stripe.plan_id', None)
-    android_iap_validator_url = \
-        config.get_settings().get('iapvalidator.android_url', None)
-    ios_iap_validator_url = \
-        config.get_settings().get('iapvalidator.ios_url', None)
-    ios_iap_validator_url_v2 = \
-        config.get_settings().get('iapvalidator.ios_url_v2', None)
     voucher_api_url = \
         config.get_settings().get('voucher_api.url', None)
     voucher_api_key = \
@@ -126,45 +112,6 @@ def get_stripe_plan_id():
         return stripe_plan_id
     else:
         return None
-
-
-def get_android_iap_validator_url():
-    global android_iap_validator_url
-    if android_iap_validator_url is not None:
-        return android_iap_validator_url
-    else:
-        return None
-
-
-def get_ios_iap_validator_url():
-    global ios_iap_validator_url
-    if ios_iap_validator_url is not None:
-        return ios_iap_validator_url
-    else:
-        return None
-
-def get_ios_iap_validator_url_v2():
-    global ios_iap_validator_url_v2
-    if ios_iap_validator_url_v2 is not None:
-        return ios_iap_validator_url_v2
-    else:
-        return None
-
-
-def get_iap_sub_price():
-    global iap_sub_price
-    if iap_sub_price is not None:
-        return iap_sub_price
-    else:
-        return 9.99
-
-
-def get_iap_sub_price_payout_ratio():
-    global iap_sub_price_payout_ratio
-    if iap_sub_price_payout_ratio is not None:
-        return iap_sub_price_payout_ratio
-    else:
-        return 0.7
 
 def get_voucher_api_url():
     global voucher_api_url
