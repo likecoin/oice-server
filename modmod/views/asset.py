@@ -58,7 +58,7 @@ SUPPORT_AUDIO_FORMATS = set([
 ])
 
 @library_assets_typed.get()
-def list_asset(request):
+def list_library_asset(request):
     email = request.authenticated_userid
     try:
         user = UserQuery(DBSession).fetch_user_by_email(email=email).one()
@@ -83,7 +83,7 @@ def list_asset(request):
 
 
 @story_assets.get(permission='get')
-def list_asset(request):
+def list_story_asset(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
 
     assets = AssetQuery(DBSession).query \

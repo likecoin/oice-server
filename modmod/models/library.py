@@ -267,6 +267,14 @@ class LibraryQuery:
         return self.count_store_libs()\
             .filter(Library.price == 0)
 
+    def count_paid_store_libs(self):
+        return self.count_store_libs() \
+            .filter(Library.settlement_currency == 'fiat')
+
+    def fetch_paid_store_libs(self):
+        return self.fetch_store_libs() \
+            .filter(Library.settlement_currency == 'fiat')
+
     def count_likecoin_store_libs(self):
         return self.count_store_libs() \
             .filter(Library.settlement_currency == 'likecoin')
