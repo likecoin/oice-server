@@ -189,6 +189,7 @@ OICE_HTML_META = """
 <meta property='og:url' content='%s' />
 <meta property='og:image' content='%s' />
 <meta property='oice:thumbnail' content='%s' />
+<link rel='canonical' href='%s' />
 """
 
 
