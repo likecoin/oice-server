@@ -417,7 +417,7 @@ class KSScriptBuilder(ScriptExporter):
                 processing_meta = True
             elif processing_meta:
                 print(EXPORT_DEFAULT.OICE_HTML_META % (
-                    self.title, locale, self.title, description, og_url, image_url, oice_image_url
+                    self.title, locale, self.title, description, og_url, image_url or oice_image_url, oice_image_url
                 ))
                 processing_meta = False
             print(line)
