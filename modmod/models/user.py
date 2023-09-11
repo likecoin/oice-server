@@ -91,12 +91,6 @@ class User(Base, BaseMixin):
         lazy='select',
         viewonly=True
     )
-    likecoin_txs = relationship(
-        'LikecoinTx',
-        primaryjoin="User.id == LikecoinTx.user_id",
-        cascade='',
-        backref=backref('user', lazy='select')
-    )
 
     def __init__(self, email, is_anonymous=False):
         self.email = email

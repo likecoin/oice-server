@@ -119,7 +119,3 @@ from .price_tier import (
 from .user_subscription_payout import (
     UserSubscriptionPayout, UserSubscriptionPayoutQuery,
 )
-
-from .likecoin_tx import (
-    LikecoinTx, LikecoinTxFactory, LikecoinTxQuery,
-)

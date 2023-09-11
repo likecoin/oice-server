@@ -49,8 +49,6 @@ from .util import (
     normalize_ui_language,
 )
 from . import (
-    get_likecoin_api_url,
-    get_cloud_function_api_base_url,
     get_crisp_secret_key,
     get_is_production,
     set_basic_info_user_log,
@@ -456,48 +454,6 @@ def check_username_valid(request):
         "code": 200,
         "message": "ok",
     }
-
-
-@likecoin_connect.post(permission='get')
-def connect_like_coin(request):
-    session = DBSession()
-    user = UserQuery(session).fetch_user_by_email(email=request.authenticated_userid).one()
-
-    if 'likeCoinId' in request.json_body:
-        like_coin_id = str(request.json_body.get('likeCoinId', ''))
-
-        r = requests.get(get_likecoin_api_url() + '/users/id/' + like_coin_id + '/min')
-        if r.status_code != requests.codes.ok:
-            raise ValidationError('ERR_LIKECOIN_CONNECT_INVALID_ID')
-
-        wallet_address = request.json_body.get('address', '')
-        if wallet_address and wallet_address != r.json().get('wallet'):
-            raise ValidationError('ERR_LIKECOIN_CONNECT_ID_WALLET_MISMATCH')
-
-    else:
-        raise ValidationError('ERR_LIKECOIN_CONNECT_MISSING_PARAMS')
-
-    if not user.like_coin_id:
-        try:
-            user.username = like_coin_id
-            session.flush()
-        except IntegrityError:
-            raise ValidationError('ERR_LIKECOIN_CONNECT_USER_ID_DUPLICATED')
-        try:
-            user.like_coin_id = like_coin_id
-            session.flush()
-        except IntegrityError:
-            raise ValidationError('ERR_LIKECOIN_CONNECT_DUPLICATED')
-
-    elif user.like_coin_id != like_coin_id:
-        raise ValidationError('ERR_LIKECOIN_CONNECT_ALREADY')
-
-    return {
-        'code': 200,
-        'message': 'ok',
-        'user': user.serialize(),
-    }
-
 
 @credits.get()
 def get_user_credit(request):
