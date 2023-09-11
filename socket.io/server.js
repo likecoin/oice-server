@@ -1,107 +1,105 @@
-var http = require('http');
-var socketio = require('socket.io');
-var express = require('express');
-var request = require('request');
-var bodyParser = require('body-parser');
+const http = require('http');
+const socketio = require('socket.io');
+const express = require('express');
+const request = require('request');
+const bodyParser = require('body-parser');
 
-var app = express();
-var server = http.createServer(app);
-var io = socketio(server);
+const app = express();
+const server = http.createServer(app);
+const io = socketio(server);
 
-app.use(bodyParser.json({limit: '1mb'}));
-
-var validateNamespace = io.of('/import_validate');
-validateNamespace.on('connection', connectionHandler);
+app.use(bodyParser.json({ limit: '1mb' }));
 
 function connectionHandler(socket) {
-    socket.on('set_id', function (id) {
-        socket.join(id);
-    });
+  socket.on('set_id', (id) => {
+    socket.join(id);
+  });
 }
 
-app.post('/import_validate', function (req, res) {
-    res.json({'message':'ok'});
+const validateNamespace = io.of('/import_validate');
+validateNamespace.on('connection', connectionHandler);
 
-    var id = req.body.id;
+app.post('/import_validate', (req, res) => {
+  res.json({ message: 'ok' });
 
-    validateNamespace.to(id).emit('finished', {
-        id : id,
-        errors : req.body.errors
-    });
+  const { id } = req.body;
+
+  validateNamespace.to(id).emit('finished', {
+    id,
+    errors: req.body.errors,
+  });
 });
 
-
-var importNameSpace = io.of('/import');
-importNameSpace.on('connection', function (socket) {
-  socket.on('listen', function (importJobId) {
+const importNameSpace = io.of('/import');
+importNameSpace.on('connection', (socket) => {
+  socket.on('listen', (importJobId) => {
     socket.join(importJobId);
   });
 });
 
-app.post('/import/:importJobId', function (req, res) {
-  var jobId = req.params.importJobId;
+app.post('/import/:importJobId', (req, res) => {
+  const jobId = req.params.importJobId;
   res.json({
     message: 'ok',
-    jobId: jobId,
+    jobId,
   });
 
   importNameSpace.to(jobId).emit('event', req.body);
 });
 
-var exportNamespace = io.of('/export');
+const exportNamespace = io.of('/export');
 exportNamespace.on('connection', connectionHandler);
 
-app.post('/export', function (req, res) {
-    res.json({'message':'ok'});
+app.post('/export', (req, res) => {
+  res.json({ message: 'ok' });
 
-    var id = req.body.id;
+  const { id } = req.body;
 
-    exportNamespace.to(id).emit('finished', {
-        id : id
-    });
+  exportNamespace.to(id).emit('finished', {
+    id,
+  });
 });
 
-var buildNamespace = io.of('/build');
+const buildNamespace = io.of('/build');
 buildNamespace.on('connection', connectionHandler);
 
-app.post('/build', function (req, res) {
-    res.json({'message':'ok'});
+app.post('/build', (req, res) => {
+  res.json({ message: 'ok' });
 
-    var oice_id = req.body.id;
-    var id = req.body.batchId || oice_id;
-    var message = req.body.message;
-    var payload = {
-      id : oice_id,
-      title : req.body.title,
-      url : req.body.url,
-      message
-    };
-    buildNamespace.to(id).emit(message == 'ok' ? 'finished' : 'failed', payload);
+  const oiceId = req.body.id;
+  const id = req.body.batchId || oiceId;
+  const { message } = req.body;
+  const payload = {
+    id: oiceId,
+    title: req.body.title,
+    url: req.body.url,
+    message,
+  };
+  buildNamespace.to(id).emit(message === 'ok' ? 'finished' : 'failed', payload);
 });
 
-var addAudioNameSpace = io.of('/audio/convert');
-addAudioNameSpace.on('connection', function (socket) {
-  socket.on('listen', function (jobId) {
+const addAudioNameSpace = io.of('/audio/convert');
+addAudioNameSpace.on('connection', (socket) => {
+  socket.on('listen', (jobId) => {
     socket.join(jobId);
   });
 });
 
-app.post('/audio/convert/:jobId', function (req, res) {
-  var jobId = req.params.jobId;
+app.post('/audio/convert/:jobId', (req, res) => {
+  const { jobId } = req.params;
   res.json({
     message: 'ok',
-    jobId: jobId,
+    jobId,
   });
 
   addAudioNameSpace.to(jobId).emit('event', req.body);
 });
 
-
-var pollingTimer = setInterval(function() {
-  request.post(process.env.MODMOD_TRIAL_URL || "http://modmod:6543/trial_hook", function (error, response, body) {
-    // do nothing
+setInterval(() => {
+  request.post(process.env.MODMOD_TRIAL_URL || 'http://modmod:6543/trial_hook', (error) => {
+    if (error) console.error(error); // do nothing
   });
-}, process.env.MODMOD_TRIAL_POLLING_INTERVAL || 3600000); //3600 * 1000
+}, process.env.MODMOD_TRIAL_POLLING_INTERVAL || 3600000); // 3600 * 1000
 
 server.listen(process.env.MODMOD_SOCKETIO_PORT || 8082);
-console.info("Listening on " + (process.env.MODMOD_SOCKETIO_PORT || 8082));
+console.info(`Listening on ${process.env.MODMOD_SOCKETIO_PORT || 8082}`);
