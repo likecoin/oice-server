@@ -29,6 +29,7 @@ from . import (
     set_basic_info_log,
     set_basic_info_membership_log,
     check_is_language_valid,
+    get_site_external_host,
 )
 
 KAFKA_TOPIC_LIBRARY = 'oice-library'
@@ -369,47 +370,64 @@ def purchase_library(request):
 
         charge_amount = library.price * 100
 
-        if not user.customer_id:
-            token = request.json_body
+        customer_id = None
 
-            # Create a Customer
-            customer = stripe.Customer.create(
-              source=token['id'],
-              email=request.authenticated_userid
-            )
-            user.customer_id = customer.id
+        if user.customer_id:
+            customer_id = user.customer_id
 
-        else:
-            customer = stripe.Customer.retrieve(user.customer_id)
-            if request.body and 'id' in request.json_body:
-              customer.source = request.json_body['id']
-              customer.save()
+        checkout_session = stripe.checkout.Session.create(
+            line_items=[
+                {
+                    'price_data': {
+                        'product_data': {
+                            'name': library.name,
+                            'description': library.description if library.description else None,
+                            'images': [library.cover_storage_url],
+                            'metadata': {
+                                'libraryId': library.id,
+                            },
+                        },
+                        'unit_amount': int(math.ceil(charge_amount)),
+                        'currency': 'usd',
+                    },
+                    'quantity': 1,
+                },
+            ],
+            mode='payment',
+            success_url= 'https://' + get_site_external_host() + '/store/library/' + str(library.id) + '?action=purchase_success',
+            cancel_url= 'https://' + get_site_external_host() + '/store/library/' + str(library.id) + '?action=purchase_cancel',
+            automatic_tax={'enabled': True},
+            customer=customer_id,
+            customer_email=None if customer_id else request.authenticated_userid,
+            payment_intent_data={
+                'metadata': {
+                    'type': 'library',
+                    'email': request.authenticated_userid,
+                    'username': user.username,
+                    'userId': user.id,
+                    'libraryId': library.id,
+                },
+                'transfer_data': {
+                    'destination': library.users[0].stripe_account_id,
+                    'amount': int(math.ceil(charge_amount * 0.7)),
+                } if library.users[0].stripe_account_id else None,
+            },
+            metadata={
+                'type': 'library',
+                'email': request.authenticated_userid,
+                'username': user.username,
+                'userId': user.id,
+                'libraryId': library.id,
+            },
+        )
 
-        try:
-            charge = stripe.Charge.create(
-                amount=int(charge_amount),
-                currency="usd",
-                customer=customer,
-                description='oice asset store - ' + library.name,
-                destination={
-                  "amount": int(math.ceil(charge_amount * 0.7)),
-                  "account": library.users[0].stripe_account_id,
-                }
-            )
-        except Exception as e:
-            return Response(status=400, json={
-                'code': 400,
-                'message': 'ERR_LIBRARY_PURCHASE_FAILURE',
-                'stripeCode': str(e),
-            })
+        url = checkout_session.url
 
-        user.libraries_purchased.append(library)
-        user.libraries_selected.append(library)
-
-        log_dict = set_basic_info_library_log(library, log_dict)
-        log_dict = set_basic_info_membership_log(user, log_dict)
-        log_dict = set_basic_info_log(request, log_dict)
-        log_message(KAFKA_TOPIC_LIBRARY, log_dict)
+        return {
+            "url": url,
+            "message": "ok",
+            "code": 200
+        }
 
     return {
         'code': 200,

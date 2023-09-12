@@ -32,8 +32,7 @@ KAFKA_TOPIC_ERROR = 'oice-error'
 
 crisp_secret_key = None
 stripe_api_key = None
-stripe_client_id = None
-stripe_plan_id = None
+stripe_price_id = None
 voucher_api_url = None
 voucher_api_key = None
 cloud_function_api_base_url = None
@@ -52,10 +51,10 @@ def dict_get_value(_dict, keys_array, default_value=None):
 
 
 def includeme(config):
+    global site_external_host
     global crisp_secret_key
     global stripe_api_key
-    global stripe_client_id
-    global stripe_plan_id
+    global stripe_price_id
     global voucher_api_url
     global voucher_api_key
     global cloud_function_api_base_url
@@ -63,14 +62,14 @@ def includeme(config):
     global es_log_key
     global is_production
 
+    site_external_host = \
+        config.get_settings().get('external.host', None)
     crisp_secret_key = \
         config.get_settings().get('crisp.secret_key', None)
     stripe_api_key = \
         config.get_settings().get('stripe.api_key', None)
-    stripe_client_id = \
-        config.get_settings().get('stripe.client_id', None)
-    stripe_plan_id = \
-        config.get_settings().get('stripe.plan_id', None)
+    stripe_price_id = \
+        config.get_settings().get('stripe.price_id', None)
     voucher_api_url = \
         config.get_settings().get('voucher_api.url', None)
     voucher_api_key = \
@@ -82,6 +81,13 @@ def includeme(config):
     es_log_whitelist = [path for path in es_log_whitelist_str.split(',')]
     es_log_key = config.get_settings().get('eslog.key', '')
     is_production = config.get_settings().get('isProduction', '') == 'true'
+
+def get_site_external_host():
+    global site_external_host
+    if site_external_host is not None:
+        return site_external_host
+    else:
+        return None
 
 def get_crisp_secret_key():
     global crisp_secret_key
@@ -97,19 +103,10 @@ def get_stripe_api_key():
     else:
         return None
 
-
-def get_stripe_client_id():
-    global stripe_client_id
-    if stripe_client_id is not None:
-        return stripe_client_id
-    else:
-        return None
-
-
-def get_stripe_plan_id():
-    global stripe_plan_id
-    if stripe_plan_id is not None:
-        return stripe_plan_id
+def get_stripe_price_id():
+    global stripe_price_id
+    if stripe_price_id is not None:
+        return stripe_price_id
     else:
         return None
 

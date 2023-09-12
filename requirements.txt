@@ -28,7 +28,7 @@ redis==2.10.6
 rq==0.12.0
 cornice==2.4.0
 requests==2.20.1
-stripe==2.15.0
+stripe==6.4.0
 google-cloud-storage==1.44.0
 setuptools==45
 firebase-admin==3.2.1

@@ -14,20 +14,25 @@ from ..models import (
     DBSession,
     User,
     UserQuery,
-    OiceQuery,
+    LibraryQuery,
 )
 
 from .util import (
     log_message,
 )
 
+from .store import (
+    KAFKA_TOPIC_LIBRARY
+)
+
 from . import (
+    get_site_external_host,
     get_stripe_api_key,
-    get_stripe_client_id,
-    get_stripe_plan_id,
+    get_stripe_price_id,
     set_basic_info_membership_log,
     set_basic_info_log,
     set_basic_info_oice_log_author,
+    set_basic_info_library_log,
     get_voucher_api_url,
     get_voucher_api_key,
 )
@@ -35,27 +40,26 @@ from ..operations import user as UserOperations
 
 log = logging.getLogger(__name__)
 KAFKA_TOPIC_USER = 'oice-user'
-membership = Service(name='membership',
-                          path='membership',
+
+membership_checkout = Service(name='membership_checkout',
+                          path='membership/checkout',
+                          renderer='json')
+
+membership_portal = Service(name='membership_portal',
+                          path='membership/portal',
                           renderer='json')
 
 membership_connect = Service(name='membership_connect',
                               path='membership/connect',
                               renderer='json')
 
-webhook_subscription_android = Service(
-    name='webhook_subscription_android',
-    path='webhook/subscription/android',
-    renderer='json',
-)
+membership = Service(name='membership',
+                          path='membership',
+                          renderer='json')
 
 strip_hook = Service(name='strip_hook',
                         path='strip_hook',
                         renderer='json')
-
-strip_connect_hook = Service(name='strip_connect_hook',
-                                path='strip_connect_hook',
-                                renderer='json')
 
 trial_hook = Service(name='trial_hook',
                         path='trial_hook',
@@ -67,87 +71,77 @@ voucher_redeem_code = Service(
     renderer='json',
 )
 
-
-@membership.post(permission='get')
-def post_new_subscription(request):
+@membership_checkout.post(permission='get')
+def init_new_subscription(request):
     try:
         user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
         if not user:
             raise HTTPForbidden
 
-        # Get the credit card details submitted by the form
-        token = request.json_body
+        customer_id = None
 
-        customer = None
+        if user.customer_id:
+            customer_id = user.customer_id
 
-        if user.is_new_subscribe:
-            log_action = 'startSubscribe'
-        else:
-            log_action = 'reSubscribe'
+        checkout_session = stripe.checkout.Session.create(
+            line_items=[
+                {
+                    'price': get_stripe_price_id(),
+                    'quantity': 1,
+                },
+            ],
+            mode='subscription',
+            success_url= 'https://' + get_site_external_host() + '/profile?action=backer_success',
+            cancel_url= 'https://' + get_site_external_host() + '/profile?action=backer_cancel',
+            automatic_tax={'enabled': True},
+            customer=customer_id,
+            customer_creation=None if customer_id else 'always',
+            customer_email=None if customer_id else request.authenticated_userid,
+            subscription_data={
+                'metadata': {
+                    'email': request.authenticated_userid,
+                    'username': user.username,
+                    'userId': user.id,
+                }
+            },
+            metadata={
+                'type': 'membership',
+                'email': request.authenticated_userid,
+                'username': user.username,
+                'userId': user.id,
+            },
+        )
 
-        if not user.customer_id:
-            # Create a Customer
-            customer = stripe.Customer.create(
-              source=token['id'],
-              plan=get_stripe_plan_id(),
-              email=request.authenticated_userid
-            )
-
-            user.customer_id = customer.id
-
-        else:
-            # update customer's token
-            customer = stripe.Customer.retrieve(user.customer_id)
-            customer.source = token['id']
-            customer.save()
-
-        subscription_list = stripe.Subscription.list(
-                              customer=user.customer_id,
-                              plan=get_stripe_plan_id(),
-                              status='active'
-                            )
-
-        current_subscription = None
-
-        if subscription_list and subscription_list.data:
-            current_subscription = subscription_list.data[0]
-            current_subscription.plan = get_stripe_plan_id()
-            current_subscription.cancel_at_period_end = False
-            current_subscription.save()
-            new_expire_date = datetime.fromtimestamp(current_subscription.current_period_end)
-            if user.expire_date is None or new_expire_date > user.expire_date:
-                user.expire_date = new_expire_date
-                user.platform = 'stripe'
-        else:
-            if user.expire_date and user.expire_date > datetime.utcnow():
-                # Has an deleted sub not expired
-                expire_time_s = (user.expire_date - datetime.utcfromtimestamp(0)).total_seconds()
-                current_subscription = stripe.Subscription.create(
-                  customer=customer,
-                  plan=get_stripe_plan_id(),
-                  trial_end=expire_time_s
-                )
-            else:
-                current_subscription = stripe.Subscription.create(
-                  customer=customer,
-                  plan=get_stripe_plan_id()
-                )
-                user.expire_date = datetime.fromtimestamp(current_subscription.current_period_end)
-
-        user.role = 'paid'
-        user.is_trial = False
-        user.is_cancelled = False
-
-        log_dict = {
-            'action': log_action,
-            'token': token,
-        }
-        log_dict = set_basic_info_membership_log(user, log_dict)
-        log_dict = set_basic_info_log(request, log_dict)
-        log_message(KAFKA_TOPIC_USER, log_dict)
+        url = checkout_session.url
 
         return {
-            "user": user.serialize(),
+            "url": url,
+            "message": "ok",
+            "code": 200
+        }
+
+    except:
+        e = sys.exc_info()[:2]
+        raise ValidationError(str(e))
+
+
+@membership_portal.post(permission='get')
+def go_to_membership_portal(request):
+    try:
+        user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
+
+        if user.customer_id is None:
+            raise ValidationError('subscription not found')
+
+        portal_session = stripe.billing_portal.Session.create(
+            customer=user.customer_id,
+            return_url='https://' + get_site_external_host() + '/profile?action=backer_portal',
+        )
+
+        url = portal_session.url
+
+        return {
+            "url": url,
             "message": "ok",
             "code": 200
         }
@@ -164,7 +158,7 @@ def cancel_subscription(request):
 
         subscription_list = stripe.Subscription.list(
                               customer=user.customer_id,
-                              plan=get_stripe_plan_id(),
+                              price=get_stripe_price_id(),
                               status='active'
                             )
 
@@ -199,50 +193,62 @@ def register_connect_oauth(request):
     if not user:
         raise HTTPForbidden
 
-    payload = request.json_body
-    data = {
-        "grant_type": "authorization_code",
-        "client_id": get_stripe_client_id(),
-        "client_secret": get_stripe_api_key(),
-        "code": payload['code'],
-    }
+    stripe_account_id = None
 
-    url = 'https://connect.stripe.com/oauth/token'
-    resp = requests.post(url, params=data)
-    # Do not store access_token for now since we do not need it
-    # user.stripe_access_token = resp.json().get('access_token')
-    # user.stripe_refresh_token = resp.json().get('refresh_token')
-    user.stripe_account_id = resp.json().get('stripe_user_id')
+    if user.stripe_account_id:
+        stripe_account_id = user.stripe_account_id
+        current_account = stripe.Account.retrieve(user.stripe_account_id)
+        if current_account.charges_enabled:
+            raise ValidationError('ERR_STRIPE_ACCOUNT_ALREADY_CONNECTED')
+    else:
+        account = stripe.Account.create(
+            type="express",
+            email=request.authenticated_userid,
+        )
+        stripe_account_id = account.id
+        user.stripe_account_id = account.id
+
+    account_link = stripe.AccountLink.create(
+        account=stripe_account_id,
+        refresh_url='https://' + get_site_external_host() + '/profile?action=connect_refresh',
+        return_url='https://' + get_site_external_host() + '/profile?action=connect_return',
+        type="account_onboarding",
+    )
+    url = account_link.url
+
     return {
-        "user": user.serialize(),
+        "url": url,
         "message": "ok",
         "code": 200
     }
 
-@membership_connect.delete(permission='get')
-def revoke_stripe_access(request):
+@membership_connect.get(permission='get')
+def go_to_connect_dashboard(request):
     user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one_or_none()
     if not user:
         raise HTTPForbidden
 
-    requests.post(
-        'https://connect.stripe.com/oauth/deauthorize',
-        params={
-            'client_id': get_stripe_client_id(),
-            'stripe_user_id': user.stripe_account_id,
-        },
-        headers={ 'Authorization': 'Bearer ' + get_stripe_api_key() }
-    )
+    if not user.stripe_account_id:
+        raise ValidationError('ERR_STRIPE_ACCOUNT_ALREADY_CONNECTED')
 
-    user.stripe_account_id = None
+    account_link = None
 
-    # Remove all user's on sale libraries from asset store
-    user_on_sale_libraries = [l for l in user.libraries if not l.is_deleted and l.price > 0]
-    for library in user_on_sale_libraries:
-        library.launched_at = None
-
+    stripe_account_id = user.stripe_account_id
+    current_account = stripe.Account.retrieve(user.stripe_account_id)
+    if current_account.charges_enabled:
+        account_link = stripe.Account.create_login_link(
+            user.stripe_account_id
+        )
+    else:
+        account_link = stripe.AccountLink.create(
+            account=stripe_account_id,
+            refresh_url='https://' + get_site_external_host() + '/profile?action=connect_refresh',
+            return_url='https://' + get_site_external_host() + '/profile?action=connect_return',
+            type="account_onboarding",
+        )
+    url = account_link.url
     return {
-        "user": user.serialize(),
+        "url": url,
         "message": "ok",
         "code": 200
     }
@@ -253,22 +259,50 @@ def get_stripe_webhook(request):
         user = None
         event_json = request.json_body
         event = stripe.Event.retrieve(event_json["id"])
-        if 'invoice.payment_succeeded' == event.type:
+
+        if 'checkout.session.completed' == event.type:
+            session = event.data.object
+            if (session.metadata.type == 'library'):
+                user_id = session.metadata.userId
+                library_id = session.metadata.libraryId
+
+                user = UserQuery(DBSession).get_user_by_id(user_id)
+                if session.customer:
+                    user.customer_id = session.customer
+
+                library = LibraryQuery(DBSession).get_library_by_id(library_id)
+                user.libraries_purchased.append(library)
+                user.libraries_selected.append(library)
+
+                log_dict = {
+                    'action': 'buyLibrary',
+                    'price': library.price,
+                }
+                log_dict = set_basic_info_library_log(library, log_dict)
+                log_dict = set_basic_info_membership_log(user, log_dict)
+                log_dict = set_basic_info_log(request, log_dict)
+                log_message(KAFKA_TOPIC_LIBRARY, log_dict)
+
+        elif 'invoice.paid' == event.type:
             invoice = event.data.object
-            current_subscription = stripe.Subscription.retrieve(invoice.subscription)
-            user = UserQuery(DBSession).fetch_user_by_customer_id(customer_id = invoice.customer)
-            user.role = 'paid'
-            user.is_trial = False
-            new_expire_date = datetime.fromtimestamp(current_subscription.current_period_end)
-            if user.expire_date is None or new_expire_date > user.expire_date:
-                user.expire_date = new_expire_date
-                user.platform = 'stripe'
-            log_dict = {
-                'action': 'subscriptionExtended',
-            }
-            log_dict = set_basic_info_membership_log(user, log_dict)
-            log_dict = set_basic_info_log(request, log_dict)
-            log_message(KAFKA_TOPIC_USER, log_dict)
+            if invoice.subscription:
+                current_subscription = stripe.Subscription.retrieve(invoice.subscription)
+                user_id = current_subscription.metadata.userId
+                user = UserQuery(DBSession).get_user_by_id(user_id)
+                user.role = 'paid'
+                user.is_trial = False
+                user.is_cancelled = False
+                user.customer_id = current_subscription.customer
+                new_expire_date = datetime.fromtimestamp(current_subscription.current_period_end)
+                if user.expire_date is None or new_expire_date > user.expire_date:
+                    user.expire_date = new_expire_date
+                    user.platform = 'stripe'
+                log_dict = {
+                    'action': 'subscriptionExtended',
+                }
+                log_dict = set_basic_info_membership_log(user, log_dict)
+                log_dict = set_basic_info_log(request, log_dict)
+                log_message(KAFKA_TOPIC_USER, log_dict)
 
         elif 'customer.subscription.deleted' == event.type:
             subscription = event.data.object
@@ -283,25 +317,6 @@ def get_stripe_webhook(request):
             # log_dict = set_basic_info_membership_log(user, log_dict)
             # log_message(KAFKA_TOPIC_USER, log_dict)
 
-        return {
-            "message": "ok",
-            "code": 200
-        }
-
-    except:
-        e = sys.exc_info()[:2]
-        raise ValidationError(str(e))
-
-@strip_connect_hook.post()
-def get_stripe_connect_webhook(request):
-    try:
-        user = None
-        event_json = request.json_body
-        event = stripe.Event.retrieve(event_json["id"])
-        if 'account.application.deauthorized' == event.type:
-            account = event.data.object
-            user = UserQuery(DBSession).fetch_user_by_stripe_account_id(stripe_account_id = account.id)
-            user.stripe_account_id = None
         return {
             "message": "ok",
             "code": 200
