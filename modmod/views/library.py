@@ -161,6 +161,7 @@ def add_library(request):
             if 'price' in meta:
                 if library_type == 'forSale':
                     library.price = PriceTierQuery(DBSession).get_price_usd_by_tier(meta['price'])
+                    library.settlement_currency = 'fiat'
                 else:
                     raise ValidationError('ERR_LIBRARY_PRICE_TIER_SHOULD_NOT_BE_ATTACHED')
         else:
@@ -221,6 +222,7 @@ def update_library(request):
                     raise ValidationError('ERR_LIBRARY_PRICE_TIER_SHOULD_NOT_BE_ATTACHED')
                 else:
                     library.price = PriceTierQuery(DBSession).get_price_usd_by_tier(meta['price'])
+                    library.settlement_currency = 'fiat'
             if 'isLaunched' in meta:
                 library.is_public = meta['isLaunched']
 
