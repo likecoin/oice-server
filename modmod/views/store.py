@@ -365,8 +365,9 @@ def purchase_library(request):
         log_dict = set_basic_info_log(request, log_dict)
         log_message(KAFKA_TOPIC_LIBRARY, log_dict)
     else:
-        if not library.users or not library.users[0].stripe_account_id:
-            raise ValidationError('ERR_LIBRARY_NOT_CONNECTED')
+    # Collect with oice stripe if library is not connected to any account
+    #     if not library.users or not library.users[0].stripe_account_id:
+    #         raise ValidationError('ERR_LIBRARY_NOT_CONNECTED')
 
         charge_amount = library.price * 100
 
