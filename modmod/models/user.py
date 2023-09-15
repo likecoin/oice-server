@@ -125,7 +125,7 @@ class User(Base, BaseMixin):
     def serialize_min(self):
         return {
             'id': self.id,
-            "email": self.email,
+            "username": self.username,
             "displayName" : self.display_name,
             'avatar': self.avatar_url(),
         }
@@ -133,6 +133,7 @@ class User(Base, BaseMixin):
     def serialize_credit(self):
         return {
             'id': self.id,
+            "username": self.username,
             'displayName' : self.display_name,
             'description': self.description,
             'seekingSubscriptionMessage': self.seeking_subscription_message,
