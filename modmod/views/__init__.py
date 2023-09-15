@@ -184,6 +184,20 @@ def set_basic_info_membership_log(user, log_dict=None):
     return log_dict
 
 
+def set_basic_info_story_log(user, story, log_dict=None):
+    if log_dict is None:
+        log_dict = {}
+    log_dict.update({
+        'user': user.display_name,
+        'email': user.email,
+        'userId': user.id,
+        'createDate': user.created_at.isoformat(),
+        'dayAfterCreate': (datetime.utcnow() - user.created_at).days,
+        'story': story.name,
+        'storyId': story.id,
+    })
+    return log_dict
+
 def set_basic_info_oice_log(user, oice, log_dict=None):
     if log_dict is None:
         log_dict = {}

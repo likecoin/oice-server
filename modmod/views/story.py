@@ -29,9 +29,12 @@ from ..models import (
 
 from . import (
     check_is_language_valid,
+    set_basic_info_log,
+    set_basic_info_story_log,
     get_request_user,
 )
 from .util import (
+    log_message,
     normalize_language,
     normalize_story_language,
 )
@@ -43,15 +46,18 @@ from ..config import (
 )
 from ..operations.script_validator import ScriptValidator
 from ..operations.credit import get_story_credit
+from ..operations.oice import fork_oice as do_fork_oice
 from ..operations.image_handler import ComposeOgImage
 from ..operations.worker import KSBuildWorker
 from ..operations.block import count_words_of_block
 from ..operations.story import (
     remove_story_localization,
+    fork_story as do_fork_story,
     translate_story,
     translate_story_preview,
 )
 
+KAFKA_TOPIC_OICE = 'oice-oice'
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +71,11 @@ story_translate = Service(name='story_translate',
                           renderer='json',
                           factory=StoryFactory,
                           traverse='/{story_id}')
+story_fork = Service(name='story_fork',
+                    path='story/{story_id}/fork',
+                    renderer='json',
+                    factory=StoryFactory,
+                    traverse='/{story_id}')
 story_list = Service(name='story_list',
                      path='story',
                      renderer='json')
@@ -358,6 +369,38 @@ def get_translate(request):
         'result': result,
     }
 
+
+@story_fork.post(permission='get')
+def fork_story(request):
+    user = UserQuery(DBSession).fetch_user_by_email(email=request.authenticated_userid).one()
+    if not user:
+        raise HTTPForbidden
+
+    story = request.context
+    oices = story.oice
+    is_self_forking = story in user.stories
+    forked_story = do_fork_story(DBSession, story, is_self_forking)
+
+    for oice in oices:
+        new_oice = do_fork_oice(DBSession, forked_story, oice, 0)
+
+    user.stories.append(forked_story)
+
+    log_dict = {
+        'action': 'forkStory',
+        'storyForkOf': story.id,
+        'description': forked_story.description,
+        'updatedAt': forked_story.updated_at.isoformat(),
+        'language': forked_story.language,
+    }
+    log_dict = set_basic_info_story_log(user, forked_story, log_dict)
+    log_dict = set_basic_info_log(request, log_dict)
+    log_message(KAFKA_TOPIC_OICE, log_dict)
+
+    return {
+        'message': 'ok',
+        "story": forked_story.serialize(fetch_story_query_language(request, forked_story)),
+    }
 
 @story_validate.get(permission='get')
 def validate_story(request):
