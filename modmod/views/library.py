@@ -48,14 +48,14 @@ library_id_selection = Service(name='library_id_selection',
 
 @library_id.get()
 def show_library(request):
-    email = request.authenticated_userid
-    try:
-        user = UserQuery(DBSession).fetch_user_by_email(email=email).one()
-    except NoResultFound:
-        raise HTTPForbidden
-
     library = request.context
     if not library.is_public:
+        email = request.authenticated_userid
+        try:
+            user = UserQuery(DBSession).fetch_user_by_email(email=email).one()
+        except NoResultFound:
+            raise HTTPForbidden
+
         # check correct owner if library is not public
         if user not in library.users:
             raise HTTPForbidden
