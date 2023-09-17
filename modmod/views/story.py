@@ -384,6 +384,9 @@ def fork_story(request):
     for oice in oices:
         new_oice = do_fork_oice(DBSession, forked_story, oice, 0)
 
+    # HACK: if story is forked from the same user, refreshing force the append to be actually executed instead of ignored
+    DBSession.refresh(forked_story)
+    DBSession.refresh(user)
     user.stories.append(forked_story)
 
     log_dict = {

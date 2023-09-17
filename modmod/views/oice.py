@@ -648,6 +648,9 @@ def fork_oice(oice, user):
         forked_story = next((user_story for user_story in user.stories if oice.story_id == user_story.fork_of), None)
         if not forked_story:
             forked_story = do_fork_story(DBSession, story, is_self_forking)
+            # HACK: if story is forked from the same user, refreshing force the append to be actually executed instead of ignored
+            DBSession.refresh(forked_story)
+            DBSession.refresh(user)
             user.stories.append(forked_story)
         else:
             fork_serial_number = sum(1 for o in forked_story.oice if oice.id == o.fork_of)
