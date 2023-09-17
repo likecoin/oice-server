@@ -639,15 +639,18 @@ def fork_oice(oice, user):
 
     story = oice.story
 
-    forked_story = next((user_story for user_story in user.stories if oice.story_id == user_story.fork_of), None)
+    is_self_forking = story in user.stories
     fork_serial_number = 0
 
-    if not forked_story:
-        is_self_forking = story in user.stories
-        forked_story = do_fork_story(DBSession, story, is_self_forking)
-        user.stories.append(forked_story)
+    if is_self_forking:
+        forked_story = story
     else:
-        fork_serial_number = sum(1 for o in forked_story.oice if oice.id == o.fork_of)
+        forked_story = next((user_story for user_story in user.stories if oice.story_id == user_story.fork_of), None)
+        if not forked_story:
+            forked_story = do_fork_story(DBSession, story, is_self_forking)
+            user.stories.append(forked_story)
+        else:
+            fork_serial_number = sum(1 for o in forked_story.oice if oice.id == o.fork_of)
 
     new_oice = do_fork_oice(DBSession, forked_story, oice, fork_serial_number)
 
