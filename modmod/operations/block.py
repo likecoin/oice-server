@@ -218,6 +218,80 @@ def fork_blocks(DBSession, oice, blocks):
     return blocks
 
 
+def get_text_from_block(session, story=None, oice=None, language=None):
+    if not language:
+        language = story.language if story else oice.language
+
+    sql = '''
+    SELECT
+        BlockWordValue.text_value
+    FROM (
+             SELECT
+                A.`block_id` AS block_id,
+                IF(
+                    M.`tagname` = 'option' AND AD.`attribute_name` = 'answers',
+                    REPLACE(TRIM(LEADING '["' FROM TRIM(TRAILING '"]' FROM A.`value`->'$[*].content')), '", "', ''),
+                    A.`value`
+                )
+                AS text_value
+            FROM
+                `attribute` AS A
+                JOIN `attribute_definition` AD
+                    ON A.`attribute_definition_id` = AD.`id`
+                JOIN `macro` M
+                    ON AD.`macro_id` = M.`id`
+            WHERE
+                (
+                    A.`language` = '%s'
+                    AND
+                    (
+                        (
+                            M.`tagname` = 'characterdialog'
+                            AND AD.`attribute_name` = 'dialog'
+                        )
+                        OR (
+                            M.`tagname` = 'addTalk'
+                            AND AD.`attribute_name` = 'talk'
+                        )
+                        OR (
+                            M.`tagname` = 'aside'
+                            AND AD.`attribute_name` = 'text'
+                        )
+                        OR (
+                            M.`tagname` = 'option'
+                            AND (
+                                AD.`attribute_name` = 'question'
+                                OR AD.`attribute_name` = 'answers'
+                            )
+                        )
+                    )
+                )
+        ) BlockWordValue
+        JOIN `block` B
+            ON BlockWordValue.`block_id` = B.`id`
+    ''' % language
+
+    if story:
+        sql += '''
+            JOIN `oice` O
+                ON B.`oice_id` = O.`id`
+        WHERE O.`story_id` = %d
+            AND O.`is_deleted` = false
+        ''' % story.id
+
+    elif oice:
+        sql += '''WHERE B.`oice_id` = %d''' % oice.id
+
+    else:
+        return 0
+
+    sql += '''
+        ORDER BY position ASC
+    '''
+    results = session.execute(sql).fetchall()
+
+    return [r[0] for r in results] if results else []
+
 def count_words_of_block(session, story=None, oice=None, language=None):
     if not language:
         language = story.language if story else oice.language

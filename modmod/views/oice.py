@@ -59,7 +59,7 @@ from . import (
 )
 from ..operations.story import fork_story as do_fork_story
 from ..operations.oice import fork_oice as do_fork_oice, translate_oice
-from ..operations.block import count_words_of_block
+from ..operations.block import count_words_of_block, get_text_from_block
 from .util import (
     log_message,
     normalize_language,
@@ -183,6 +183,11 @@ oice_view_count = Service(name='oice_view_count',
                     traverse='/{oice_id}')
 oice_id_wordcount = Service(name='oice_id_wordcount',
                             path='oice/{oice_id}/wordcount',
+                            renderer='json',
+                            factory=OiceFactory,
+                            traverse='/{oice_id}')
+oice_id_plaintext = Service(name='oice_id_plaintext',
+                            path='oice/{oice_id}/plaintext',
                             renderer='json',
                             factory=OiceFactory,
                             traverse='/{oice_id}')
@@ -829,6 +834,17 @@ def get_word_count_of_oice(request):
         "wordcount": count_words_of_block(DBSession, oice=oice, language=query_language),
     }
 
+@oice_id_plaintext.get()
+def get_plainttext_of_oice(request):
+    oice = request.context
+    query_language = fetch_oice_query_language(request, oice)
+    texts = get_text_from_block(DBSession, oice=oice, language=query_language)
+
+    return {
+        "code": 200,
+        "message": "ok",
+        "text": '\n'.join(texts),
+    }
 
 @oice_communication.get()
 def communicate(request):
