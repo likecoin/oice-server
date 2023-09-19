@@ -244,6 +244,7 @@ class Story(Base, BaseMixin):
             'coverStorage': self.get_cover_storage_url(language),  # deprecated
             'author' : self.users[0].serialize_min() if self.users else None,  # assume user[0] is author
             'ogImage': self.get_og_image_url_obj(language),
+            'supportedLanguages': self.supported_languages,
         }
 
     def serialize_credits(self, language=None):

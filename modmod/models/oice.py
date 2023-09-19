@@ -124,6 +124,12 @@ class Oice(Base, BaseMixin):
     def has_published(self):
         return self.state >= 2
 
+    @property
+    def supported_languages(self):
+        languages = [k for k in self.localizations.keys()]
+        languages.append(self.language)
+        return languages
+
     def preview(self):
         if not self.has_previewed:
             self.state = 1
@@ -195,6 +201,7 @@ class Oice(Base, BaseMixin):
 
     def serialize(self, user=None, language=None):
         serialized_oice = self.serialize_editor(user, language)
+        serialized_oice['supportedLanguages'] = self.supported_languages
         serialized_oice['updatedAt'] = self.updated_at.isoformat()
         serialized_oice['description'] = self.get_description(language)
         serialized_oice['image'] = self.get_image_url_obj(language)
