@@ -27,11 +27,18 @@ def includeme(config):
 
     if config.get_settings().get('es.enable', None) == 'true':
         host = config.get_settings().get('es.host', '')
-        port = config.get_settings().get('es.port', '')
         max_suggest = config.get_settings().get('es.max_suggest', '0')
-        user = config.get_settings().get('es.user', '')
-        password = config.get_settings().get('es.pass', '')
-        init_elastic_search(host, port, max_suggest, user, password, isProduction)
+        aws_access_key = config.get_settings().get('es.aws_access_key', '')
+        aws_secret_key = config.get_settings().get('es.aws_secret_key', '')
+        aws_region = config.get_settings().get('es.aws_region', '')
+        init_elastic_search(
+            host,
+            max_suggest,
+            aws_access_key,
+            aws_secret_key,
+            aws_region,
+            isProduction,
+        )
 
     init_slack(config.get_settings())
 

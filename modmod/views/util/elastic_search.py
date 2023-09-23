@@ -1,20 +1,29 @@
 import json
 import requests
 import logging
+from aws_requests_auth.aws_auth import AWSRequestsAuth
+
 log = logging.getLogger(__name__)
 
 global ELASTIC_SEARCH_OBJ
 ELASTIC_SEARCH_OBJ = {'enable': False}
+global auth
 
-def init_elastic_search(host, port, max_suggest, user, password, isProduction):
+def init_elastic_search(
+    host, max_suggest, aws_access_key, aws_secret_key, aws_region, isProduction
+):
     global ELASTIC_SEARCH_OBJ
-    ELASTIC_SEARCH_OBJ['host'] = host + ':' + port
+    ELASTIC_SEARCH_OBJ['host'] = host
     ELASTIC_SEARCH_OBJ['enable'] = True
     ELASTIC_SEARCH_OBJ['max'] = max_suggest
-    ELASTIC_SEARCH_OBJ['user'] = user
-    ELASTIC_SEARCH_OBJ['pass'] = password
     ELASTIC_SEARCH_OBJ['server'] = 'production' if isProduction else 'test'
-    
+
+    global auth
+    auth = AWSRequestsAuth(aws_access_key=aws_access_key,
+                       aws_secret_access_key=aws_secret_key,
+                       aws_host=host.split('://')[-1],
+                       aws_region=aws_region,
+                       aws_service='es')
 
 def update_elastic_search_user(display_name, email):
     global ELASTIC_SEARCH_OBJ
@@ -27,16 +36,12 @@ def update_elastic_search_user(display_name, email):
             'suggest': display_name.split(' ') + [email],
             'server': server
         }
-    
-        auth = (
-            ELASTIC_SEARCH_OBJ['user'],
-            ELASTIC_SEARCH_OBJ['pass'],
-        )
         url = ELASTIC_SEARCH_OBJ['host']
         url += '/oice/user/' + server + ':' + email
         try:
-            requests.post(url, auth=auth, data=json.dumps(payload))
+            requests.post(url, auth=auth, json=payload)
         except Exception as e:
+            log.error(e)
             log.error('Search user error: ' + str(e))
 
 
@@ -74,19 +79,11 @@ def do_elastic_search_user(prefix):
                 }
             }
         }
-    
-        param = {
-            'size': ELASTIC_SEARCH_OBJ['max'],
-            '_source_include': 'user,email'
-        }
-        auth = (
-            ELASTIC_SEARCH_OBJ['user'],
-            ELASTIC_SEARCH_OBJ['pass'],
-        )
+
         url = ELASTIC_SEARCH_OBJ['host']
         url += '/oice/user/_search'
         try:
-            res = requests.get(url, auth=auth, params=param, data=json.dumps(payload))
+            res = requests.get(url, auth=auth, json=payload)
             content = json.loads(res.text)
 
             emails = []
@@ -99,6 +96,7 @@ def do_elastic_search_user(prefix):
             # return list of email
             return emails,email_score
         except Exception as e:
+            log.error(e)
             log.error('Search user error: ' + str(e))
     
     return [],{}
