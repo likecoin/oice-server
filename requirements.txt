@@ -1,4 +1,4 @@
-Mako==1.0.6
+Mako==1.2.2
 MarkupSafe==0.23
 PasteDeploy==1.5.2
 PyMySQL==0.9.3
