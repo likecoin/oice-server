@@ -18,6 +18,7 @@ jobs:
             apk --no-cache --virtual .build-deps add gcc g++ musl-dev linux-headers
             python3 -m venv venv
             . venv/bin/activate
+            pip install --upgrade pip
             pip install -r requirements.txt
             pip install setuptools==45
             python setup.py develop

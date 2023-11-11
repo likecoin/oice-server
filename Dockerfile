@@ -13,6 +13,7 @@ RUN apk --no-cache --virtual .build-deps add \
   g++ \
   linux-headers \
   musl-dev \
+  && pip install --upgrade pip \
   && pip install setuptools==45 \
   && pip install -r requirements.txt \
   && apk del .build-deps
