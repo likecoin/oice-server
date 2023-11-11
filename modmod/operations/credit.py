@@ -51,7 +51,7 @@ def get_oice_credit(oice):
         all_users |= grouped_users
         # Remove duplicate user
         # and serialize
-        grouped_credits[asset_type] = [u.serialize() for u in grouped_users]
+        grouped_credits[asset_type] = [u.serialize_credit() for u in grouped_users]
         grouped_credits[asset_type].sort(key=lambda user: user["displayName"])
 
     # Add director group
