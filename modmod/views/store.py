@@ -23,6 +23,9 @@ from ..models import (
     FeaturedLibraryListQuery,
 )
 
+from ..operations.library import get_oice_with_library
+from .oice import fetch_oice_query_language
+
 from .util import log_message
 from . import (
     set_basic_info_library_log,
@@ -275,9 +278,12 @@ def fetch_library(request):
     log_dict = set_basic_info_membership_log(user, log_dict)
     log_dict = set_basic_info_log(request, log_dict)
     log_message(KAFKA_TOPIC_LIBRARY, log_dict)
+    library_serialized = library.serialize_store_detail(user)
+    oices = get_oice_with_library(library)
+    library_serialized['oices'] = [o.serialize(user, language=fetch_oice_query_language(request, o)) for o in oices]
 
     return {
-        'library': library.serialize_store_detail(user),
+        'library': library_serialized,
         'message': "ok",
         'code': 200
     }
