@@ -8,13 +8,12 @@ from ..models import DBSession, Asset, Attribute, Block, Library, OiceQuery, Oic
 log = logging.getLogger(__name__)
 
 def get_oice_with_library(library, count=5):
-    asset_ids = DBSession.query(Asset.id).filter(Asset.library_id == library.id).all()
-    asset_ids = [a.id for a in asset_ids]
-    if len(asset_ids) == 0:
+    if library.asset_count == 0:
         return []
     block_ids = (
         DBSession.query(Attribute.block_id)
-        .filter(Attribute.asset_id.in_(asset_ids))
+        .join(Asset)
+        .filter(Asset.library_id == library.id)
         .distinct()
     )
     block_ids = [a.block_id for a in block_ids]
