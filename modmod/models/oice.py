@@ -205,7 +205,9 @@ class Oice(Base, BaseMixin):
         serialized_oice['updatedAt'] = self.updated_at.isoformat()
         serialized_oice['description'] = self.get_description(language)
         serialized_oice['image'] = self.get_image_url_obj(language)
-        serialized_oice['author'] = self.story.users[0].serialize_credit()  # assume user[0] is author
+        serialized_oice['author'] = (
+            self.story.users[0].serialize_credit() if self.story.users else None
+        )
         serialized_oice['nextEpisode'] = self.get_next_episode(language)
         serialized_oice['hasLiked'] = user in self.story.liked_users
         serialized_oice['storyName'] = self.story.get_name(language)
