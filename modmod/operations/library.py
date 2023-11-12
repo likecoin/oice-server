@@ -12,25 +12,17 @@ log = logging.getLogger(__name__)
 def get_oice_with_library(library, count=5):
     if library.asset_count == 0:
         return []
-    oice_ids = (
-        DBSession.query(Block.oice_id)
+    oices = (
+        DBSession.query(Oice)
         .select_from(Attribute)
         .join(Asset)
         .join(Block)
+        .join(Oice)
         .filter(Asset.library_id == library.id)
-        .group_by(Block.oice_id)
-        .order_by(func.count(Block.id).desc())
-        .limit(count)
-        .all()
-    )
-    oice_ids = [b.oice_id for b in oice_ids]
-    if len(oice_ids) == 0:
-        return []
-    oices = (
-        DBSession.query(Oice)
+        .filter(Oice.fork_of.is_(None))
         .filter(Oice.is_deleted == false())
-        .filter(Oice.id.in_(oice_ids))
-        .order_by(Oice.view_count.desc())
+        .group_by(Oice.id)
+        .order_by(func.count(Block.id).desc())
         .limit(count)
         .all()
     )
