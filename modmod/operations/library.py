@@ -1,6 +1,6 @@
 import datetime
 import logging
-from sqlalchemy.sql.expression import false
+from sqlalchemy.sql.expression import true, false
 from sqlalchemy import func
 
 from .character import delete_character as operations_delete_character
@@ -19,8 +19,12 @@ def get_oice_with_library(library, count=5):
         .join(Block)
         .join(Oice)
         .filter(Asset.library_id == library.id)
-        .filter(Oice.fork_of.is_(None))
-        .filter(Oice.is_deleted == false())
+        .filter(
+            Oice.sharing_option == 0,
+            Oice.state == 2,
+            Oice.is_deleted == false(),
+            Oice.fork_of.is_(None),
+        )
         .group_by(Oice.id)
         .order_by(func.count(Block.id).desc())
         .limit(count)

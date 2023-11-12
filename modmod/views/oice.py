@@ -591,6 +591,7 @@ def build_all_oice(request):
             .filter_by(
                 Oice.sharing_option == 0,
                 Oice.state == 2,
+                Oice.is_deleted == false(),
             ) \
             .all()
 
@@ -784,7 +785,10 @@ def list_oice_profile(request):
     # Query for oice file list
     oice_list = OiceQuery(DBSession) \
             .fetch_oice_list_by_id(story_id=request_story_id) \
-            .filter(Oice.sharing_option == 0)
+            .filter(
+                Oice.sharing_option == 0,
+                Oice.state == 2,
+            )
     oice_list = [o.serialize_profile(fetch_oice_query_language(request, o)) for o in oice_list]
 
     return {
