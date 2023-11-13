@@ -12,6 +12,17 @@ log = logging.getLogger(__name__)
 def get_oice_with_library(library, count=5):
     if library.asset_count == 0:
         return []
+
+    attribute_count = (
+        DBSession.query(func.count(Attribute.id))
+        .join(Asset)
+        .filter(Asset.library_id == library.id)
+        .scalar()
+    )
+
+    if attribute_count > 100000:  # sql performance sucks
+        return []
+
     oices = (
         DBSession.query(Oice)
         .prefix_with(
