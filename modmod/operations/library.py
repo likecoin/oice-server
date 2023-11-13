@@ -14,8 +14,11 @@ def get_oice_with_library(library, count=5):
         return []
     oices = (
         DBSession.query(Oice)
-        .select_from(Attribute)
-        .join(Asset)
+        .prefix_with(
+            "STRAIGHT_JOIN"
+        )  # force asset join attribute first instead of oice
+        .select_from(Asset)
+        .join(Attribute)
         .join(Block)
         .join(Oice)
         .filter(Asset.library_id == library.id)
