@@ -13,6 +13,16 @@ def get_oice_with_library(library, count=5):
     if library.asset_count == 0:
         return []
 
+    if library.id == 1:
+        demo_oice_ids = [333, 1083, 1281, 2240, 2520][:count]
+        oices = OiceQuery(DBSession).get_by_ids(demo_oice_ids)
+        return oices
+
+    if library.id == 2304:
+        demo_oice_ids = [18452, 18578, 18685, 18877, 18902][:count]
+        oices = OiceQuery(DBSession).get_by_ids(demo_oice_ids)
+        return oices
+
     attribute_count = (
         DBSession.query(func.count(Attribute.id))
         .join(Asset)
